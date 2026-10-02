@@ -309,12 +309,12 @@ a{color:var(--sock)}
     <div class="right">
       <label class="toggle"><input type="checkbox" id="showAll"> Show non-matching days</label>
       <label class="toggle" title="Off: only the hours from your Time of day setting are shown"><input type="checkbox" id="allDay"> Show whole day</label>
-      <button class="btn" id="csv">Export CSV</button>
+      <button class="btn" id="csv" hidden style="display:none">Export CSV</button>
       <span class="status" id="csvStatus" role="status"></span>
     </div>
   </div>
 
-  <div class="row" style="margin:0 0 8px;gap:6px"><span class="lbl" id="layLbl" style="margin:0 6px 0 0">Details include</span><div class="row" id="layers" role="group" aria-labelledby="layLbl"></div>
+  <div class="row" style="margin:0 0 8px;gap:6px"><span class="lbl" id="layLbl" style="display:none">Details include</span><div class="row" id="layers" role="group" aria-labelledby="layLbl" style="display:none"></div>
     <span style="flex:1"></span><button class="btn ghost" id="expAll" style="padding:4px 10px">Expand all</button><button class="btn ghost" id="colAll" style="padding:4px 10px">Collapse all</button></div>
   <div class="grid"><table class="days" id="tbl"></table></div>
   <button class="btn ghost more" id="more" hidden>Show more days</button>
@@ -508,7 +508,7 @@ a{color:var(--sock)}
 </div></nav>
 
 <script>
-const APP_VERSION='3.13'; // app-<major>-<minor>; see the lake-wind-days-builds skill
+const APP_VERSION='3.14'; // app-<major>-<minor>; see the lake-wind-days-builds skill
 // ---- data store (Open-Meteo, cached in this browser)
 const DEFAULT_SPOTS={hlucin:{name:'Hlučín',lat:49.89,lon:18.17,tides:false},novemlyny:{name:'Nové Mlýny',lat:48.88,lon:16.68,tides:false},olesna:{name:'Olešná',lat:49.65,lon:18.30,tides:false}};
 // One catalogue for history (Historical Forecast API) and forecast (Forecast API).
