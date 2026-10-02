@@ -1,0 +1,6 @@
+.DS_Store
+# old one-file-per-version builds and scratch files
+app-*.html
+lake-wind-days*.html
+gear-icon-*.html
+*.mhtml

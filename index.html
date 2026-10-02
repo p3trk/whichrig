@@ -1,0 +1,1419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lake wind days</title>
+<meta name="theme-color" content="#F6F3EC">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F6F3EC; --panel:#FFFFFF; --ink:#14232E; --muted:#56656F; --line:#DDD6C8; --soft:#EDE8DD;
+  --sock:#C4460F; --dim:.3; --ride:#C4460F; --rideT:#FFFFFF; --maybe:#E9B44C; --maybeT:#14232E; --no:#E3DED3; --noT:#56656F; --calEmpty:#E7E1D5;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){--bg:#0E1417;--panel:#172126;--ink:#E6EEF0;--muted:#9AAAB1;--line:#26343A;--soft:#1D2A30;--sock:#FF7A3D;--dim:.25;--ride:#FF7A3D;--rideT:#0E1417;--maybe:#F2C14E;--maybeT:#0E1417;--no:#26343A;--noT:#9AAAB1;--calEmpty:#1D2A30}
+}
+:root[data-theme="dark"]{--bg:#0E1417;--panel:#172126;--ink:#E6EEF0;--muted:#9AAAB1;--line:#26343A;--soft:#1D2A30;--sock:#FF7A3D;--dim:.25;--ride:#FF7A3D;--rideT:#0E1417;--maybe:#F2C14E;--maybeT:#0E1417;--no:#26343A;--noT:#9AAAB1;--calEmpty:#1D2A30}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.5 Barlow,system-ui,-apple-system,"Segoe UI",sans-serif}
+.wrap{max-width:640px;margin:0 auto;padding:20px 16px 110px}
+h1{font:700 clamp(28px,5vw,44px)/1.05 "Barlow Semi Condensed",Barlow,system-ui,sans-serif;margin:0;letter-spacing:-.01em}
+h2{font:700 20px/1.2 "Barlow Semi Condensed",Barlow,sans-serif;margin:0 0 12px}
+.sub{color:var(--muted);margin:6px 0 22px;max-width:75ch}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin-bottom:14px}
+.lbl{font-weight:600;font-size:13px;color:var(--muted);margin-bottom:6px;display:block}
+.hint{display:block;font-size:12px;color:var(--muted);margin-top:4px}
+.row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px 24px}
+.chip{font:500 13px Barlow,sans-serif;border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:999px;padding:5px 11px;cursor:pointer}
+.chip[aria-pressed=true]{background:var(--sock);border-color:var(--sock);color:#fff}
+button,select,input{font:inherit;color:inherit}
+.chip:focus-visible,input:focus-visible,select:focus-visible,.btn:focus-visible{outline:2px solid var(--sock);outline-offset:2px}
+select,input[type=number]{font:500 14px Barlow,sans-serif;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 8px}
+select{width:100%}
+input[type=range]{width:100%;accent-color:var(--sock)}
+.big{display:flex;align-items:baseline;gap:6px}
+.big output{font:700 44px/1 "Barlow Semi Condensed",Barlow,sans-serif;color:var(--sock);font-variant-numeric:tabular-nums}
+.big span{font:600 16px "Barlow Semi Condensed",Barlow,sans-serif;color:var(--muted)}
+.btn{font:600 14px Barlow,sans-serif;border:1px solid var(--sock);background:var(--sock);color:#fff;border-radius:8px;padding:7px 14px;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--sock)}
+.btn[disabled]{opacity:.5;cursor:default}
+
+.riderGear{display:grid;grid-template-columns:220px 1fr;gap:20px 28px}
+.gearTbl{width:auto;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.gearTbl th{font:600 12px Barlow,sans-serif;color:var(--muted);text-align:left;padding:0 8px 6px 0}
+.gearTbl td{padding:4px 8px 4px 0;vertical-align:middle;white-space:nowrap}
+.gearTbl select{width:auto;min-width:112px}
+.gearTbl input[type=number]{width:74px}
+.gearTbl tr.off td:not(:first-child){opacity:.45}
+.rng{display:flex;align-items:center;gap:4px}
+.auto{font-size:11px;color:var(--muted)}
+.x{border:none;background:none;color:var(--muted);font-size:18px;cursor:pointer;padding:2px 6px;border-radius:6px}
+.x:hover{color:var(--sock)}
+.swatch{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:middle}
+
+.sumTbl{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;min-width:560px}
+.sumTbl th{font:600 12px Barlow,sans-serif;color:var(--muted);padding:4px 6px;text-align:center}
+.sumTbl th:first-child,.sumTbl td:first-child{text-align:left}
+.sumTbl td{padding:6px;text-align:center;border-top:1px solid var(--line)}
+.sumTbl td.n{font:700 22px/1 "Barlow Semi Condensed",Barlow,sans-serif}
+.sumTbl td.n small{font:500 13px Barlow,sans-serif;color:var(--muted)}
+.heat{border-radius:5px;padding:5px 0;font-weight:700;font-size:14px}
+.heat.gearbg{color:#fff;text-shadow:0 0 3px rgba(0,0,0,.75),0 1px 2px rgba(0,0,0,.6)}
+.heat.none{background:var(--soft);color:var(--muted);font-weight:600}
+.gearUse{font-size:13px;color:var(--muted);margin-top:10px}
+.gearUse b{color:var(--ink);font-weight:600}
+.scroll{overflow-x:auto}
+
+.bar{display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px;margin:22px 0 10px}
+.count{font:700 36px/1 "Barlow Semi Condensed",Barlow,sans-serif}
+.count small{font:500 16px Barlow,sans-serif;color:var(--muted)}
+.bar .right{margin-left:auto;display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.toggle{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted);cursor:pointer}
+.status{font-size:13px;color:var(--muted)}
+
+.grid{overflow-x:auto;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:6px 0}
+.days{border-collapse:collapse;width:100%;min-width:860px;font-variant-numeric:tabular-nums}
+.days th{font:600 12px Barlow,sans-serif;color:var(--muted);padding:8px 2px;text-align:center}
+.days th:first-child,.days td.d{text-align:left;padding-left:16px;white-space:nowrap}
+.days td{padding:2px;text-align:center}
+.days td.d{font-weight:600;font-size:14px;padding-right:8px}
+.days td.d small{display:block;font-weight:400;color:var(--muted);font-size:12px;line-height:1.2}
+.cell{height:34px;min-width:30px;border-radius:5px;display:flex;flex-direction:column;align-items:center;justify-content:center;font:600 13px/1 Barlow,sans-serif}
+.cell svg{width:11px;height:11px;margin-top:2px}
+.cell.out{opacity:var(--dim)}
+.cell.hit{box-shadow:inset 0 -3px 0 var(--sock)}
+td.m{font:600 14px "Barlow Semi Condensed",Barlow,sans-serif;padding:0 8px}
+td.t{font-size:13px;color:var(--muted);white-space:nowrap;padding:0 8px}
+td.g{text-align:left;padding:0 10px 0 8px;min-width:150px;max-width:220px}
+.pills{display:flex;flex-wrap:wrap;gap:3px}
+.pill{font:600 11px/1 Barlow,sans-serif;border-radius:4px;padding:4px 5px;white-space:nowrap}
+tr.miss td{opacity:.35}
+.days tr + tr td{border-top:1px solid color-mix(in srgb,var(--line) 55%,transparent)}
+.xbtn{border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:6px;font:600 11px/1 Barlow,sans-serif;padding:3px 6px;margin-top:4px;cursor:pointer;display:inline-block}
+.xbtn:hover,.xbtn[aria-expanded=true]{color:var(--sock);border-color:var(--sock)}
+.days th:first-child,.days td.d,.days tr.sub td.lab{position:sticky;left:0;z-index:2;background:var(--panel)}
+.days tr.focus td.d{background:color-mix(in srgb,var(--sock) 9%,var(--panel))}
+@media (max-width:560px){.days td.d{max-width:128px;white-space:normal}.days td.d .fc,.days td.d .srctag{display:block;margin:3px 0 0;width:auto;max-width:118px;white-space:normal;line-height:1.25}}
+.days tr.focus td{background:color-mix(in srgb,var(--sock) 9%,transparent)}
+.days tr.focus td.d{box-shadow:inset 4px 0 0 var(--sock)}
+.days tr.sub td{border-top:none;padding-top:0;padding-bottom:1px}
+.days tr.sub td.lab{padding-left:16px;font-size:11px;color:var(--muted);white-space:nowrap;text-align:left}
+.mini{height:18px;min-width:30px;border-radius:4px;display:flex;align-items:center;justify-content:center;font:600 11px/1 Barlow,sans-serif}
+.mini.txt{color:var(--ink);font-weight:500}
+.mini.out{opacity:var(--dim)}
+.cloudbar{position:relative;overflow:hidden;background:var(--soft)}
+.cloudbar i{position:absolute;left:0;right:0;bottom:0;background:#8A9BA8;opacity:.55}
+.cloudbar span{position:relative}
+.empty{padding:40px 20px;text-align:center;color:var(--muted)}
+.more{display:block;margin:14px auto 0}
+.foot{color:var(--muted);font-size:13px;margin-top:18px;max-width:78ch}
+.riderRow{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px 24px;margin-bottom:16px;align-items:start}
+.gearTbl th{vertical-align:bottom;line-height:1.2}
+.gearTbl input.w{width:64px}
+.gearTbl select.sm{min-width:0;width:auto}
+.vto{font-size:13px;white-space:nowrap}
+.warn{color:#B4540A;font-weight:600;cursor:help;margin-left:4px}
+.how{font-size:13px;color:var(--muted);max-width:80ch}
+.how summary{cursor:pointer;color:var(--ink);font-weight:600}
+.how p{margin:6px 0}
+.cov{border-top:1px solid var(--line);margin-top:18px;padding-top:14px}
+.prioItem{display:inline-flex;align-items:center;gap:2px;border:1px solid var(--line);border-radius:999px;padding:2px 4px 2px 10px;font-size:13px;font-weight:600}
+.x.mv{font-size:11px;padding:2px 4px}
+.x.mv[disabled]{opacity:.25;cursor:default}
+.dirBlock{border-top:1px solid var(--line);margin-top:16px;padding-top:12px}
+.dirRow{display:flex;flex-direction:column;align-items:center;gap:6px;padding:4px 0}
+#dirs{display:flex;flex-wrap:wrap;gap:14px 22px}
+.compass{display:grid;grid-template-columns:repeat(3,44px);gap:4px}
+.chip.dchip.any{font-size:12px;font-weight:600}
+.dirRow b{font-weight:600;font-size:14px}
+.chip .da{width:12px;height:12px;vertical-align:-2px;margin-right:4px}
+.chip.dchip{width:44px;height:44px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:12px}
+.chip.dchip .da{width:20px;height:20px;margin:0}
+.sumSpot{display:grid;grid-template-columns:250px minmax(0,1fr);gap:10px 24px;padding:14px 0;border-top:1px solid var(--line)}
+.sumSpot:first-child{border-top:none;padding-top:4px}
+.sumInfo h3{font:700 18px/1.2 "Barlow Semi Condensed",Barlow,sans-serif;margin:0 0 4px}
+.sumN{font:700 26px/1.1 "Barlow Semi Condensed",Barlow,sans-serif;margin-bottom:8px}
+.sumN small{font:500 13px Barlow,sans-serif;color:var(--muted)}
+.gearList{list-style:none;margin:0;padding:0;font-size:13px}
+.gearList li{display:flex;align-items:center;padding:2px 0}
+.gearList .gv{margin-left:auto;color:var(--muted);padding-left:10px;white-space:nowrap}
+.gearList .gv b{color:var(--ink);font-weight:600;margin-right:4px}
+.sumChart svg{display:block;width:100%;height:auto;max-height:240px}
+.sumChart text{font:500 12px Barlow,sans-serif;fill:var(--muted)}
+.sumChart text.tot{font:700 13px "Barlow Semi Condensed",Barlow,sans-serif;fill:var(--ink)}
+.sumChart .grid{stroke:var(--line);stroke-dasharray:2 3}
+.sumChart .axis{stroke:var(--line)}
+.sumChart .binOff{fill:var(--muted);opacity:.35}
+@media (max-width:760px){.sumSpot{grid-template-columns:minmax(0,1fr)}}
+.inp{font:500 14px Barlow,sans-serif;border:1px solid var(--line);border-radius:8px;padding:6px 8px;background:var(--panel);color:var(--ink);min-width:0}
+.bchip{display:inline-flex;align-items:center;gap:0}
+.bchip .chip i,.mcov i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:0}
+.bchip .chip b{font-weight:700;margin-left:4px}
+.bchip:not(.on) .chip{opacity:.6;text-decoration:line-through}
+.mcovs{display:flex;flex-direction:column;gap:2px;font-size:12px}
+.mcov{white-space:nowrap}.mcov.off{opacity:.5}
+.srctag{display:inline-block;font:600 10px/1 Barlow,sans-serif;letter-spacing:.03em;border-radius:3px;padding:2px 4px;margin-left:6px;vertical-align:1px;border:1px solid var(--line);color:var(--muted);text-transform:uppercase}
+.days tr.sub td.lab i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:4px}
+.days tr.sub.moff .mini{opacity:.35}
+.dataTbl{border-collapse:collapse;width:100%;min-width:620px;font-size:14px;font-variant-numeric:tabular-nums}
+.dataTbl th{font:600 12px Barlow,sans-serif;color:var(--muted);text-align:left;padding:4px 8px 4px 0}
+.dataTbl td{padding:6px 8px 6px 0;border-top:1px solid var(--line)}
+.dataTbl select.msel{display:block;width:180px;font-size:12px;padding:3px 4px}
+.dataTbl td{vertical-align:top}
+.dataTbl .miss{color:var(--muted)}
+.fc{display:inline-block;font:600 10px/1 Barlow,sans-serif;text-transform:uppercase;letter-spacing:.04em;background:var(--sock);color:#fff;border-radius:3px;padding:2px 4px;margin-left:6px;vertical-align:1px}
+a{color:var(--sock)}
+.fold>summary{list-style:none;cursor:pointer;display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px;margin:-18px -20px;padding:16px 20px;border-radius:14px}
+.fold>summary::-webkit-details-marker{display:none}
+.fold>summary h2{margin:0;display:flex;align-items:center;gap:8px}
+.fold>summary h2::before{content:'▸';font-size:14px;color:var(--muted);transition:transform .15s;display:inline-block;width:12px}
+.fold[open]>summary h2::before{transform:rotate(90deg)}
+.fold[open]>summary{margin-bottom:0}
+.fold[open]{padding-top:18px}
+.fold[open]>summary+*{margin-top:22px}
+.fold>summary:hover h2{color:var(--sock)}
+.fold>summary:focus-visible{outline:2px solid var(--sock);outline-offset:2px}
+.psum{font-size:13px;color:var(--muted)}
+.fold[open] .psum{display:none}
+.fold .psum b{color:var(--ink);font-weight:600}
+.apphead{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px}
+.apphead .brand{display:flex;align-items:center;gap:10px;font:700 22px/1 "Barlow Semi Condensed",Barlow,sans-serif}
+.apphead .when{font-size:12px;color:var(--muted);text-align:right}
+.ver{font:600 11px Barlow,sans-serif;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:2px 7px;align-self:center}
+.hdrR{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:2px;background:var(--panel)}
+.seg button{min-height:32px;min-width:48px;padding:0 12px;border:none;border-radius:999px;background:transparent;color:var(--muted);font:600 13px Barlow,sans-serif;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.seg button:focus-visible{outline:2px solid var(--sock);outline-offset:1px}
+.tab[hidden]{display:none}
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--panel);border-top:1px solid var(--line);padding:6px 8px calc(10px + env(safe-area-inset-bottom,0px))}
+.tabbar .in{max-width:640px;margin:0 auto;display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+.tabbar button{min-height:52px;border:none;background:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--muted);font:600 12px Barlow,sans-serif;cursor:pointer;border-radius:10px}
+.tabbar button[aria-current="page"]{color:var(--sock)}
+.tabbar button:focus-visible{outline:2px solid var(--sock);outline-offset:-2px}
+.hero{display:flex;flex-direction:column;gap:4px;margin:6px 0 14px}
+.hero .hbig{font:700 40px/1.05 "Barlow Semi Condensed",Barlow,sans-serif;letter-spacing:-.02em}
+.hero .hbig span{display:block;color:var(--muted);font-weight:600;font-size:.5em;letter-spacing:0;margin-top:2px}
+.hero .small{font-size:14px;color:var(--muted)}
+.qchips{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-bottom:14px;scrollbar-width:none}
+.qchip{min-height:44px;padding:0 14px;border-radius:999px;border:2px solid var(--line);background:transparent;color:var(--muted);font:600 14px Barlow,sans-serif;white-space:nowrap;cursor:pointer;display:flex;align-items:center;gap:6px}
+.qchip.on{color:#fff}
+.qchip.faded{opacity:.35;filter:saturate(.4);transition:opacity .2s}
+.qchip.faded:hover{opacity:.6}
+.qchip{transition:opacity .2s}
+.qchip small{font-weight:500;opacity:.85;font-size:12px}
+.dcards{display:flex;flex-direction:column;gap:10px}
+.dcard{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;width:100%;text-align:left;font:inherit;color:inherit;cursor:pointer;transition:border-color .15s,box-shadow .15s}
+.dcard:hover{border-color:var(--muted)}
+.dcard:active{box-shadow:inset 0 0 0 2px var(--sock)}
+.dcard:focus-visible{outline:2px solid var(--sock);outline-offset:2px}
+.dcard .strip,.dcard .meta,.dcard .top{width:100%}
+.dcard .top{display:flex;align-items:center;gap:10px;width:100%;background:none;border:none;padding:0;color:inherit;text-align:left;cursor:pointer;font:inherit}
+.dcard .dd{font:700 18px "Barlow Semi Condensed",Barlow,sans-serif;min-width:62px}
+.vpill{font:700 12px Barlow,sans-serif;letter-spacing:.04em;text-transform:uppercase;padding:4px 8px;border-radius:6px}
+.vpill.ride{background:var(--ride);color:var(--rideT)}.vpill.maybe{background:var(--maybe);color:var(--maybeT)}.vpill.no{background:var(--no);color:var(--noT)}
+.dcard .gear{font-size:14px;font-weight:700}
+.dcard .spot{margin-left:auto;font-size:13px;color:var(--muted);white-space:nowrap}
+.strip{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:2px}
+.strip span{height:8px;border-radius:2px}
+.dcard .meta{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--muted)}
+.dots{display:inline-flex;gap:3px;vertical-align:-1px;margin-right:5px}.dots i{width:8px;height:8px;border-radius:2px;background:var(--line)}.dots i.y{background:var(--ink)}
+.dmore{border-top:1px solid var(--line);padding-top:8px;display:flex;flex-direction:column;gap:6px;font-size:13px}
+.dmore .sp{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:'n v' 'g m';gap:2px 8px;align-items:center;padding:4px 0}
+.dmore .sp b{grid-area:n;font-weight:600}.dmore .sp .vpill{grid-area:v;justify-self:end}.dmore .sp .g{grid-area:g;font-weight:600;white-space:nowrap}.dmore .sp .mx{grid-area:m;color:var(--muted);justify-self:end;white-space:nowrap}
+.gdot{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:0}
+.empty2{background:var(--panel);border:1px dashed var(--line);border-radius:14px;padding:22px;text-align:center;color:var(--muted)}
+.sechead{font:700 24px/1.1 "Barlow Semi Condensed",Barlow,sans-serif;margin:4px 0 10px}
+.cal{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:14px}
+.calgrid{display:grid;gap:3px}
+.calgrid span{aspect-ratio:1;border-radius:3px;background:var(--calEmpty)}
+.calmonths{display:grid;gap:3px;font-size:11px;color:var(--muted);margin-bottom:3px}
+.gbars{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.gbar .row1{display:flex;justify-content:space-between;font-size:14px}
+.gbar .trk{height:10px;border-radius:5px;background:var(--soft);margin-top:4px}.gbar .trk i{display:block;height:10px;border-radius:5px}
+.tab .panel{margin-bottom:12px}
+.snote{margin:0 0 12px;padding:10px 12px;border-radius:10px;font-size:14px;line-height:1.4}
+.snote.in{background:color-mix(in srgb,#1F7478 12%,var(--panel));color:var(--ink)}
+.snote.out{background:repeating-linear-gradient(135deg,var(--soft) 0 8px,color-mix(in srgb,var(--soft) 55%,var(--bg)) 8px 16px);color:var(--ink);border:1px dashed var(--muted)}
+.sdiv{display:flex;align-items:center;gap:10px;margin:6px 0 2px;color:var(--muted);font:600 12px Barlow,sans-serif;text-transform:uppercase;letter-spacing:.06em}
+.sdiv::before,.sdiv::after{content:'';flex:1;border-top:2px dashed var(--line)}
+.sdiv.start{color:#1F7478}.sdiv.start::before,.sdiv.start::after{border-top-style:solid;border-color:#1F7478}
+.dcard.off{background:repeating-linear-gradient(135deg,var(--panel) 0 10px,color-mix(in srgb,var(--soft) 55%,var(--panel)) 10px 20px);border-style:dashed;border-color:var(--muted)}
+.dcard.off .vpill,.dcard.off .strip{opacity:.65}
+.offtag{display:inline-block;font:600 10px/1 Barlow,sans-serif;font-style:normal;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);border:1px dashed var(--muted);border-radius:4px;padding:2px 4px;margin-left:6px;vertical-align:2px}
+.days tr.offs td.d{background-image:repeating-linear-gradient(135deg,transparent 0 6px,color-mix(in srgb,var(--muted) 10%,transparent) 6px 12px)}
+.typeCounts{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:14px}
+.typeCounts b{font:700 18px "Barlow Semi Condensed",Barlow,sans-serif;margin-left:4px}
+.covHead{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:baseline;margin-bottom:6px}
+#covChart svg{display:block;width:100%;height:auto}
+#covChart text{font:500 12px Barlow,sans-serif;fill:var(--muted)}
+#covChart text.gl{fill:var(--ink);font-weight:600}
+#covChart .axis{stroke:var(--line)}
+#covChart .grid{stroke:var(--line);stroke-dasharray:2 3}
+#covChart .binOn{fill:var(--ink);opacity:.8}
+#covChart .binOff{fill:var(--muted);opacity:.35}
+#covChart .track{fill:var(--soft)}
+
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="apphead">
+    <div class="brand"><svg width="30" height="30" viewBox="0 0 40 40" aria-hidden="true"><path d="M8 32 L20 6 L32 32 Z" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"></path><path d="M20 6 L20 32" stroke="#C4460F" stroke-width="2.5"></path><path d="M4 36 H36" stroke="#1F7478" stroke-width="2.5" stroke-linecap="round"></path></svg><h1 style="font:inherit;margin:0">Lake wind days</h1><span class="ver" id="appVer"></span></div>
+    <div class="hdrR"><div class="when" id="when"></div><div class="seg" id="hdrUnit" role="group" aria-label="Wind units"></div></div>
+  </header>
+  <p class="sub" id="sub" hidden></p>
+
+  <section class="tab" id="tab-next" aria-label="Next days">
+    <div class="hero"><div class="hbig" id="nextBig"></div><div class="small" id="nextSmall"></div></div>
+    <p class="snote" id="seasonNote" hidden></p>
+    <div class="qchips" id="qchips" role="group" aria-label="Your quiver: switch gear on or off"></div>
+    <div class="dcards" id="dcards"></div>
+    <p class="hint" style="margin-top:12px">Ride: at least one gear works for the chosen number of hours. Maybe: a gear works, but for less time. Squares show how many models agree with the verdict. Filters for hours, temperature and direction are under Spots.</p>
+  </section>
+
+  <section class="tab" id="tab-season" aria-label="Season" hidden>
+    <p class="snote" id="seasonBanner" hidden></p>
+    <div class="sechead" id="calHead"></div>
+    <div class="row" id="calSpots" role="group" aria-label="Spot" style="margin-bottom:10px"></div>
+    <div class="cal"><div id="calBody"></div><div class="gbars" id="calBars"></div></div>
+    <details class="panel fold" id="p-sum" data-sec="sum">
+    <summary><h2 id="h-sum">Rideable days per month</h2><span class="psum" id="s-sum"></span></summary>
+    <div id="sumSpots"></div>
+    <div class="gearUse" id="gearUse"></div>
+  </details>
+    <h2 class="sechead" style="margin-top:18px">All days</h2>
+    <div class="bar">
+    <div class="count" id="count"></div>
+    <div class="right">
+      <label class="toggle"><input type="checkbox" id="showAll"> Show non-matching days</label>
+      <button class="btn" id="csv">Export CSV</button>
+      <span class="status" id="csvStatus" role="status"></span>
+    </div>
+  </div>
+
+  <div class="row" style="margin:0 0 8px;gap:6px"><span class="lbl" id="layLbl" style="margin:0 6px 0 0">Details include</span><div class="row" id="layers" role="group" aria-labelledby="layLbl"></div>
+    <span style="flex:1"></span><button class="btn ghost" id="expAll" style="padding:4px 10px">Expand all</button><button class="btn ghost" id="colAll" style="padding:4px 10px">Collapse all</button></div>
+  <div class="grid"><table class="days" id="tbl"></table></div>
+  <button class="btn ghost more" id="more" hidden>Show more days</button>
+
+  <p class="foot">Data: Open-Meteo (hourly, averaged into 2-hour steps; gusts are the 2-hour maximum). These are modelled winds, not station readings, so real gusts and lulls on the lakes can differ. A day matches when, for at least one gear in use, the wind stays inside that gear's range, from a selected direction and at or above the minimal temperature, for the chosen number of consecutive hours inside the chosen time of day. Underlined cells are the ones that count. Gear ranges are rough estimates scaled from rider weight and size; adjust them to match your own experience.</p>
+  </section>
+
+  <section class="tab" id="tab-quiver" aria-label="Quiver" hidden>
+    <details class="panel fold" id="p-gear" data-sec="gear">
+    <summary><h2 id="h-gear">Rider and gear</h2><span class="psum" id="s-gear"></span></summary>
+    <div class="riderRow">
+      <div>
+        <label class="lbl" for="weight">Rider weight</label>
+        <div class="big"><output id="wOut" for="weight">100</output><span>kg</span></div>
+        <input id="weight" type="range" min="40" max="140" step="1" value="100">
+      </div>
+      <div>
+        <label class="lbl" for="skill">Skill</label>
+        <select id="skill">
+          <option value="beginner">Beginner</option>
+          <option value="intermediate" selected>Intermediate</option>
+          <option value="advanced">Advanced (good pumping)</option>
+        </select>
+      </div>
+      <div>
+        <label class="lbl" for="suit">Wetsuit</label>
+        <select id="suit">
+          <option value="0" selected>Summer / none</option>
+          <option value="4">Winter, thick (+4 kg)</option>
+        </select>
+      </div>
+      <div>
+        <label class="lbl" for="lowMode">Lowest usable wind</label>
+        <select id="lowMode">
+          <option value="takeoff" selected>Take-off (get up)</option>
+          <option value="stay">Stay-up (once foiling)</option>
+        </select>
+        <span class="hint">Stay-up only changes foil setups.</span>
+      </div>
+    </div>
+    <div class="scroll">
+    <table class="gearTbl">
+      <thead><tr><th>Use</th><th>Type</th><th>Rig (m²)</th><th>Board (L)</th><th>Gear (kg)</th><th>Front wing (cm²)</th><th>Front wing shape</th><th>Wind range (<span class="rUnit">kt</span>)</th><th>Stay-up wind<br>(<span class="rUnit">kt</span>)</th><th>Foil lifts at board<br>speed (<span class="rUnit">kt</span>)</th><th></th></tr></thead>
+      <tbody id="gearBody"></tbody>
+    </table>
+    </div>
+    <div class="row" style="margin-top:8px;gap:14px">
+      <button class="btn ghost" id="addGear">Add gear</button>
+      <button class="btn ghost" id="resetGear" title="Back to the default quiver">Reset to default gear</button>
+      <details class="how"><summary>How ranges are calculated</summary>
+        <p>Total mass M = rider + gear (+ wetsuit). Foil take-off board speed v<sub>to</sub> = 27.2 × √(M / (C<sub>L</sub> × foil cm²)). Lowest wind to get foiling = C<sub>rig</sub> × C<sub>board</sub> × C<sub>skill</sub> × √(M / rig m²) × (v<sub>to</sub> / 8)<sup>0.75</sup> × η. Fin skips the foil term. C<sub>rig</sub>: windfoil 2.1, wingfoil 3.1, sail on fin 3.3. C<sub>board</sub> = (board litres ÷ rider kg ÷ 1.4)<sup>−0.15</sup>. C<sub>skill</sub>: beginner 1.15, intermediate 1.0, advanced 0.85 on foil and 0.9 on fin.</p>
+        <p>Front wing shape sets C<sub>L</sub>, η and the stay-up ratio: low aspect 1.0 / 1.05 / 0.80, mid 0.9 / 1.00 / 0.75, high 0.8 / 0.96 / 0.70, race 0.7 / 0.93 / 0.65.</p>
+        <p>Top of the range is the lower of two limits. The rig limit is when the sail or wing is overpowered: 4.3 (windfoil), 5.5 (wingfoil) or 6.2 (fin) × √(M / rig m²). The foil limit is its comfortable top speed, about 2.25 × v<sub>to</sub>, taken as the same wind speed. Both top-end limits are estimates; type your own range to override.</p>
+        <p>Warnings: v<sub>to</sub> above 12 kt means the foil is small for your weight, below 5 kt it is very big and slow. Results below 8 kt are extrapolated and likely optimistic.</p>
+      </details>
+    </div>
+    <div class="cov">
+      <div class="covHead"><span class="lbl" style="margin:0">Wind coverage</span><span class="status" id="covStat"></span><span class="typeCounts" id="typeCounts"></span></div>
+      <div class="row" style="margin:2px 0 8px;gap:8px"><span class="lbl" style="margin:0">Gear preference</span><div class="row" id="prio" role="group" aria-label="Gear type preference order, first is preferred"></div><span class="status">then smallest rig that works</span></div>
+      <div id="covChart"></div>
+      <span class="hint">Each calendar day counts once, even when several spots are selected, and is placed at the best spot's sustained wind (the strongest wind that held for the chosen duration within your hours, temperature and direction filters). Every rideable day is given to one gear by the gear preference above (first type that works, then the smallest rig of that type). Coloured parts of each bar and the percentages on the right show that gear usage; grey is days your gear doesn't cover. Hover a bar for counts.</span>
+    </div>
+  </details>
+  </section>
+
+  <section class="tab" id="tab-spots" aria-label="Spots" hidden>
+    <details class="panel fold" id="p-data" data-sec="data">
+    <summary><h2 id="h-data">Wind data</h2><span class="psum" id="s-data"></span></summary>
+    <div class="cols">
+      <div style="grid-column:span 2">
+        <span class="lbl" id="blendLbl">Model blend <span class="status" style="font-weight:400">(all are downloaded; switch one off to leave it out of the average)</span></span>
+        <div class="row" id="blend" role="group" aria-labelledby="blendLbl"></div>
+        <div class="row" style="margin-top:8px;flex-wrap:nowrap">
+          <label class="status" for="addModel" style="white-space:nowrap">Add model</label>
+          <select id="addModel" style="width:auto;max-width:260px"></select>
+        </div>
+      </div>
+      <div>
+        <label class="lbl" for="view">Wind shown and used</label>
+        <select id="view"></select>
+        <span class="hint" id="viewHint"></span>
+      </div>
+      <div>
+        <label class="lbl" for="start">History from</label>
+        <input type="date" id="start" class="inp">
+        <div class="row" style="margin-top:6px;flex-wrap:nowrap"><label class="status" for="fcDays" style="white-space:nowrap">Forecast days ahead</label>
+          <select id="fcDays" style="width:auto"><option value="3">3</option><option value="5" selected>5</option><option value="7">7</option><option value="10">10</option></select></div>
+        <label class="toggle" style="margin-top:6px;font-size:13px"><input type="checkbox" id="startAuto" checked> Always 1 Jan of previous year</label>
+        <span class="hint">Each model's history starts at this date or its archive start, whichever is later.</span>
+      </div>
+      <div>
+        <span class="lbl">Download</span>
+        <div class="row">
+          <button class="btn" id="dlAll">Download all spots</button>
+          <button class="btn ghost" id="updAll">Update</button>
+        </div>
+        <span class="hint">Update fetches only new days and a fresh forecast.</span>
+      </div>
+    </div>
+    <div class="scroll" style="margin-top:14px"><table class="dataTbl" id="dataTbl"></table></div>
+    <div class="row" style="margin-top:12px;gap:10px 16px">
+      <div class="row" style="flex-wrap:nowrap">
+        <label class="lbl" for="addName" style="margin:0 6px 0 0">Add spot</label>
+        <input type="search" id="addName" placeholder="Lake or town name" style="font:500 14px Barlow,sans-serif;border:1px solid var(--line);border-radius:8px;padding:6px 8px;background:var(--panel);color:var(--ink);min-width:0;width:180px">
+        <button class="btn ghost" id="addSearch">Search</button>
+      </div>
+      <span style="flex:1"></span>
+      <button class="btn ghost" id="expData">Export data (JSON)</button>
+      <button class="btn ghost" id="impBtn">Import data</button>
+      <input type="file" id="impFile" accept=".json,application/json" hidden>
+    </div>
+    <div class="row" id="addResults" style="margin-top:8px"></div>
+    <div class="row" style="margin-top:10px;gap:8px">
+      <span class="lbl" style="margin:0 6px 0 0">Add by coordinates</span>
+      <input id="cName" placeholder="Name" aria-label="Spot name" class="inp" style="width:130px">
+      <input id="cLat" placeholder="Latitude, e.g. 49.89" aria-label="Latitude" class="inp" style="width:150px" inputmode="decimal">
+      <input id="cLon" placeholder="Longitude, e.g. 18.17" aria-label="Longitude" class="inp" style="width:150px" inputmode="decimal">
+      <label class="toggle" style="font-size:13px"><input type="checkbox" id="cTide"> At the sea (download tides)</label>
+      <button class="btn ghost" id="cAdd">Add</button>
+    </div>
+    <span class="hint">You can paste both coordinates into the latitude box, e.g. "49.89, 18.17" or "43.2504011N, 16.6349519E" (degrees-minutes-seconds and S/W work too). Tides only exist at the sea; inland lakes have none.</span>
+    <p class="status" id="dataStatus" role="status" aria-live="polite" style="margin:10px 0 0"></p>
+    <p class="hint">Weather data by <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo.com</a> (CC BY 4.0). Free for personal, non-commercial use.</p>
+  </details>
+    <details class="panel fold" id="p-where" data-sec="where">
+    <summary><h2 id="h-where">Spots and period</h2><span class="psum" id="s-where"></span></summary>
+    <div class="cols">
+      <div>
+        <span class="lbl" id="spotLbl">Spots</span>
+        <div class="row" id="spots" role="group" aria-labelledby="spotLbl"></div>
+      </div>
+      <div>
+        <span class="lbl">Months</span>
+        <div class="row" style="flex-wrap:nowrap">
+          <select id="mFrom" aria-label="From month"></select>
+          <span class="status">to</span>
+          <select id="mTo" aria-label="To month"></select>
+        </div>
+        <span class="hint">Applies to every year. A range like Oct–Mar wraps over New Year.</span>
+      </div>
+      <div>
+        <span class="lbl" id="yearLbl">Years</span>
+        <div class="row" id="years" role="group" aria-labelledby="yearLbl"></div>
+      </div>
+    </div>
+      <div class="dirBlock">
+      <span class="lbl">Wind direction per spot <span class="status" style="font-weight:400">(each button sits on the side the wind comes from, its arrow shows where it blows)</span></span>
+      <div id="dirs"></div>
+    </div>
+  </details>
+    <details class="panel fold" id="p-cond" data-sec="cond">
+    <summary><h2 id="h-cond">Session conditions</h2><span class="psum" id="s-cond"></span></summary>
+    <div class="cols">
+      <div>
+        <label class="lbl" for="dur">Lasting at least</label>
+        <select id="dur">
+          <option value="1">2 hours</option>
+          <option value="2" selected>4 hours</option>
+          <option value="3">6 hours</option>
+          <option value="4">8 hours</option>
+        </select>
+      </div>
+      <div>
+        <span class="lbl">Time of day</span>
+        <div class="row" style="flex-wrap:nowrap">
+          <select id="hFrom" aria-label="From hour"></select>
+          <span class="status">to</span>
+          <select id="hTo" aria-label="To hour"></select>
+        </div>
+        <span class="hint">Both hours included. Pick 00 to 22 for all day.</span>
+      </div>
+      <div>
+        <label class="lbl" for="minT">Minimal air temperature</label>
+        <div class="big"><output id="minTOut" for="minT">18</output><span id="minTUnit">°C</span></div>
+        <input id="minT" type="range" min="-10" max="30" step="1" value="18">
+        <span class="hint">Slide fully left to ignore temperature.</span>
+      </div>
+      <div>
+        <span class="lbl" id="unitLbl">Wind units</span>
+        <div class="row" id="units" role="group" aria-labelledby="unitLbl"></div>
+      </div>
+    </div>
+  </details>
+  </section>
+</div>
+<nav class="tabbar" aria-label="Sections"><div class="in">
+  <button type="button" data-tab="next"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 12h13a3 3 0 1 0-3-3"></path><path d="M3 17h8a2.5 2.5 0 1 1-2.5 2.5"></path></svg>Next days</button>
+  <button type="button" data-tab="season"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"></rect><path d="M3 9h18M8 2v4M16 2v4"></path></svg>Season</button>
+  <button type="button" data-tab="quiver"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 21 L12 3 L18 21 Z"></path><path d="M12 3v18"></path></svg>Quiver</button>
+  <button type="button" data-tab="spots"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 21s-7-6.5-7-12a7 7 0 0 1 14 0c0 5.5-7 12-7 12z"></path><circle cx="12" cy="9" r="2.5"></circle></svg>Spots</button>
+</div></nav>
+
+<script>
+const APP_VERSION='3.1'; // app-<major>-<minor>; see the lake-wind-days-builds skill
+// ---- data store (Open-Meteo, cached in this browser)
+const DEFAULT_SPOTS={hlucin:{name:'Hlučín',lat:49.89,lon:18.17,tides:false},novemlyny:{name:'Nové Mlýny',lat:48.88,lon:16.68,tides:false},olesna:{name:'Olešná',lat:49.65,lon:18.30,tides:false}};
+// One catalogue for history (Historical Forecast API) and forecast (Forecast API).
+// [provider, id, short name, resolution, area, archive start, forecast days, note]
+const CAT_ROWS=[
+ ['Open-Meteo','best_match','Best match','varies','global','2021-03-23',16,'Open-Meteo picks the best model for each place and time.'],
+ ['NOAA (USA)','gfs_seamless','GFS','13 km','global','2021-03-23',16,'Global model; same family as the Windguru archive the gear ranges were tuned on.'],
+ ['NOAA (USA)','gfs_global','GFS Global','13–25 km','global','2021-03-23',16,''],
+ ['NOAA (USA)','gfs_hrrr','HRRR','3 km','USA','2018-01-01',2,'USA only.'],
+ ['NOAA (USA)','ncep_nbm_conus','NBM','3 km','USA','2024-10-08',11,'USA only.'],
+ ['NOAA (USA)','ncep_nam_conus','NAM','3 km','USA','2025-09-01',3,'USA only.'],
+ ['DWD (Germany)','icon_seamless','ICON Seamless','2–11 km','global','2022-11-24',7,'Combines ICON-D2, ICON-EU and global ICON.'],
+ ['DWD (Germany)','icon_global','ICON','11 km','global','2022-11-24',7,''],
+ ['DWD (Germany)','icon_eu','ICON-EU','7 km','Europe','2022-11-24',5,'Good detail for Czech lakes.'],
+ ['DWD (Germany)','icon_d2','ICON-D2','2 km','Central Europe','2022-11-24',2,'Very detailed; covers Germany, Austria, Switzerland and neighbouring areas, including Czech lakes.'],
+ ['Météo-France','meteofrance_seamless','Météo-France Seamless','1.5–25 km','global','2022-11-13',4,''],
+ ['Météo-France','meteofrance_arpege_world','ARPEGE World','25 km','global','2024-01-02',4,''],
+ ['Météo-France','meteofrance_arpege_europe','ARPEGE Europe','11 km','Europe','2022-11-13',4,''],
+ ['Météo-France','meteofrance_arome_france','AROME France','2.5 km','France','2024-01-02',2,'France and nearby areas only.'],
+ ['Météo-France','meteofrance_arome_france_hd','AROME France HD','1.5 km','France','2022-11-13',2,'France and nearby areas only.'],
+ ['ECMWF','ecmwf_ifs','IFS HRES','9 km','global','2017-01-01',15,'Longest high-resolution archive.'],
+ ['ECMWF','ecmwf_ifs025','IFS 0.25°','25 km','global','2024-02-03',15,'3-hourly data.'],
+ ['ECMWF','ecmwf_aifs025_single','AIFS','25 km','global','2025-02-20',15,'AI model; 6-hourly data, so 2-hour steps are partly empty.'],
+ ['UK Met Office','ukmo_seamless','UKMO Seamless','2–10 km','global','2022-03-01',7,''],
+ ['UK Met Office','ukmo_global_deterministic_10km','UKMO Global','10 km','global','2022-03-01',7,''],
+ ['UK Met Office','ukmo_uk_deterministic_2km','UKMO UK','2 km','UK and Ireland','2022-03-01',2,'UK and Ireland only.'],
+ ['JMA (Japan)','jma_seamless','JMA Seamless','5–55 km','global','2016-01-01',11,''],
+ ['JMA (Japan)','jma_gsm','JMA GSM','55 km','global','2016-01-01',11,'Coarse, 6-hourly.'],
+ ['JMA (Japan)','jma_msm','JMA MSM','5 km','Japan','2016-01-01',4,'Japan only.'],
+ ['KMA (Korea)','kma_seamless','KMA Seamless','1.5–12 km','global','2024-01-01',12,''],
+ ['KMA (Korea)','kma_gdps','KMA GDPS','12 km','global','2024-01-01',12,''],
+ ['KMA (Korea)','kma_ldps','KMA LDPS','1.5 km','Korea','2024-01-01',2,'Korea only.'],
+ ['Environment Canada','gem_seamless','GEM Seamless','2.5–15 km','global','2022-11-23',10,''],
+ ['Environment Canada','gem_global','GEM Global','15 km','global','2022-11-23',10,'3-hourly data.'],
+ ['Environment Canada','gem_regional','GEM Regional','10 km','North America','2022-11-23',3,'North America only.'],
+ ['Environment Canada','gem_hrdps_continental','GEM HRDPS','2.5 km','Canada','2023-03-03',2,'Canada and northern USA only.'],
+ ['MET Norway','metno_seamless','MET Nordic Seamless','1 km + ECMWF','global','2022-11-15',10,''],
+ ['MET Norway','metno_nordic','MET Nordic','1 km','Nordics','2022-11-15',2,'Norway, Sweden, Denmark, Finland only.'],
+ ['KNMI (Netherlands)','knmi_seamless','KNMI Seamless','2–5.5 km + ECMWF','global','2024-07-01',10,''],
+ ['KNMI (Netherlands)','knmi_harmonie_arome_europe','HARMONIE Europe','5.5 km','Central & N Europe','2024-07-01',2,''],
+ ['KNMI (Netherlands)','knmi_harmonie_arome_netherlands','HARMONIE Netherlands','2 km','Netherlands','2024-07-01',2,'Netherlands and Belgium only.'],
+ ['DMI (Denmark)','dmi_seamless','DMI Seamless','2 km + ECMWF','global','2024-07-01',10,''],
+ ['DMI (Denmark)','dmi_harmonie_arome_europe','HARMONIE DINI','2 km','Central & N Europe','2024-07-01',2,''],
+ ['CMA (China)','cma_grapes_global','GRAPES','15 km','global','2023-12-31',10,'3-hourly data.'],
+ ['BOM (Australia)','bom_access_global','ACCESS-G','15 km','global','2024-01-18',10,''],
+ ['ItaliaMeteo','italia_meteo_arpae_icon_2i','ICON 2I','2 km','Southern Europe','2025-04-13',3,'Italy and southern Europe.'],
+ ['MeteoSwiss','meteoswiss_icon_seamless','MeteoSwiss Seamless','1–2 km','Central Europe','2025-07-29',5,''],
+ ['MeteoSwiss','meteoswiss_icon_ch1','ICON-CH1','1 km','Alps region','2025-07-29',2,'Only reaches about 17.7° E: Nové Mlýny is covered, Hlučín and Olešná are not.'],
+ ['MeteoSwiss','meteoswiss_icon_ch2','ICON-CH2','2 km','Alps region','2025-07-29',5,'Same area as ICON-CH1.'],
+ ['GeoSphere (Austria)','geosphere_seamless','GeoSphere Seamless','2.5 km + ECMWF','global','2024-01-01',10,''],
+ ['GeoSphere (Austria)','geosphere_arome_austria','AROME Austria','2.5 km','Austria','2024-01-01',3,'Austria and nearby areas.'],
+ ['ČHMÚ (Czechia)','chmi_aladin_seamless','ALADIN','1–2.3 km','Central Europe','2025-01-01',3,'Czech model: 1 km over the Czech Republic, 2.3 km in Central Europe. Covers all three lakes.'],
+ ['ČHMÚ (Czechia)','chmi_aladin_cz_1km','ALADIN CZ','1 km','Czechia','2025-01-01',3,'Czech Republic only.'],
+ ['ČHMÚ (Czechia)','chmi_aladin_central_europe_2km','ALADIN Central Europe','2.3 km','Central Europe','2025-01-01',3,''],
+];
+const CAT={}; CAT_ROWS.forEach(([prov,id,name,res,area,min,days,note])=>CAT[id]={prov,id,name,res,area,min,days,note,label:`${name} (${res}, ${area})`});
+const HIST_URL='https://historical-forecast-api.open-meteo.com/v1/forecast';
+const FORECAST_URL='https://api.open-meteo.com/v1/forecast';
+const FC_MODELS=CAT; // same catalogue for forecasts
+const DEFAULT_BLEND=['gfs_seamless','icon_global','ecmwf_ifs','ukmo_global_deterministic_10km'];
+CAT['icon_global'].name='ICON'; CAT['ecmwf_ifs'].name='IFS'; CAT['ukmo_global_deterministic_10km'].name='UKMO Global';
+const activeModels=()=>META.blend.filter(m=>!META.off.includes(m));
+const shortName=m=>CAT[m]?.name||m;
+const MODEL_COLORS=['#1F77B4','#D1495B','#2E9E5B','#8A4FBF','#C98A00','#1F9E9E','#E07A1F','#6B7C8A'];
+const modelColor=m=>MODEL_COLORS[Math.max(0,META.blend.indexOf(m))%MODEL_COLORS.length];
+function viewLabel(){
+  if(META.view!=='combined') return `Model · ${shortName(META.view)}`;
+  const a=activeModels(); return a.length?`Combined · ${a.map(shortName).join(', ')} (${Math.round(100/a.length)}% each)`:'Combined · no model switched on';
+}
+const VARS='wind_speed_10m,wind_direction_10m,wind_gusts_10m,temperature_2m,cloud_cover';
+const MARINE_URL='https://marine-api.open-meteo.com/v1/marine', TIDE_MIN='2022-01-01';
+const LS_KEY='lakewind-blend-v3';
+const autoStart=()=>(new Date().getFullYear()-1)+'-01-01'; // 1 January of the previous year
+let SPOTS={}, META={blend:DEFAULT_BLEND.slice(),off:[],view:'combined',start:autoStart(),startAuto:true,fcDays:5};
+function freshSpots(){const s=JSON.parse(JSON.stringify(DEFAULT_SPOTS)); for(const k in s){s[k].m={};s[k].tide={};s[k].days=[];s[k].updated=null} return s}
+function loadStore(){
+  try{ const s=JSON.parse(localStorage.getItem(LS_KEY)||'null');
+    if(s&&s.spots&&typeof s.spots==='object'){ SPOTS=s.spots; Object.assign(META,s.meta||{}); }
+    else { const old=JSON.parse(localStorage.getItem('lakewind-openmeteo-v1')||'null'); // earlier version: keep the spot list, data is downloaded again
+      SPOTS=old&&old.spots?Object.fromEntries(Object.entries(old.spots).map(([k,v])=>[k,{name:v.name,lat:v.lat,lon:v.lon,tides:v.tides}])):freshSpots(); }
+  }catch(e){ SPOTS=freshSpots() }
+  for(const k in SPOTS){ SPOTS[k].m=SPOTS[k].m||{}; SPOTS[k].tide=SPOTS[k].tide||{}; SPOTS[k].days=[] }
+  META.blend=(META.blend||DEFAULT_BLEND).filter(m=>CAT[m]); if(!META.blend.length) META.blend=DEFAULT_BLEND.slice();
+  META.off=(META.off||[]).filter(m=>META.blend.includes(m));
+  if(META.view!=='combined'&&!META.blend.includes(META.view)) META.view='combined';
+}
+const IDB={db:null,
+  open(){ if(this.db) return Promise.resolve(this.db); return new Promise((res,rej)=>{ let r; try{ r=indexedDB.open('lakewind-blend',1) }catch(e){ return rej(e) }
+    r.onupgradeneeded=()=>r.result.createObjectStore('kv'); r.onsuccess=()=>res(this.db=r.result); r.onerror=()=>rej(r.error) }) },
+  async get(k){ const db=await this.open(); return new Promise((res,rej)=>{const q=db.transaction('kv').objectStore('kv').get(k); q.onsuccess=()=>res(q.result); q.onerror=()=>rej(q.error)}) },
+  async set(k,v){ const db=await this.open(); return new Promise((res,rej)=>{const tx=db.transaction('kv','readwrite'); tx.objectStore('kv').put(v,k); tx.oncomplete=()=>res(); tx.onerror=()=>rej(tx.error)}) }
+};
+let storeWarned=false;
+function saveStore(){
+  const light={}; for(const [k,s] of Object.entries(SPOTS)){ const {m,tide,days,...rest}=s; light[k]=rest }
+  try{ localStorage.setItem(LS_KEY,JSON.stringify({spots:light,meta:META})) }catch(e){}
+  const bulk={}; for(const [k,s] of Object.entries(SPOTS)) bulk[k]={m:s.m,tide:s.tide};
+  return IDB.set('data',bulk).catch(()=>{ if(!storeWarned){storeWarned=true; setStatus('The browser could not keep the downloaded data (storage blocked), so it will be gone when you close the page. Use Export data to keep a copy.')} });
+}
+async function loadBulk(){ try{ const b=await IDB.get('data'); if(b) for(const [k,v] of Object.entries(b)) if(SPOTS[k]){ SPOTS[k].m=v.m||{}; SPOTS[k].tide=v.tide||{} } }catch(e){} }
+loadStore();
+function loadStoreFix(){ if(META.startAuto!==false){ META.startAuto=true; META.start=autoStart() } META.blend=(META.blend||DEFAULT_BLEND).filter(m=>CAT[m]); if(!META.blend.length) META.blend=DEFAULT_BLEND.slice(); META.off=(META.off||[]).filter(m=>META.blend.includes(m)); if(META.view!=='combined'&&!META.blend.includes(META.view)) META.view='combined' }
+const HOURS=[0,2,4,6,8,10,12,14,16,18,20,22];
+const SECT=['N','NE','E','SE','S','SW','W','NW'];
+const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const TYPES={
+  windfoil:{name:'Windfoil',foil:true,crig:2.1,cup:4.3,gear:20},
+  wingfoil:{name:'Wingfoil',foil:true,crig:3.1,cup:5.5,gear:11},
+  fin:{name:'Fin',foil:false,crig:3.3,cup:6.2,gear:15}
+};
+const AR={low:{name:'Low aspect, thick',cl:1.0,eta:1.05,stay:0.80},mid:{name:'Mid aspect',cl:0.9,eta:1.00,stay:0.75},high:{name:'High aspect',cl:0.8,eta:0.96,stay:0.70},race:{name:'Race',cl:0.7,eta:0.93,stay:0.65}};
+const SKILL={beginner:{foil:1.15,fin:1.15},intermediate:{foil:1.0,fin:1.0},advanced:{foil:0.85,fin:0.9}};
+// colour families: windfoil = blues, wingfoil = purples, fin = greens; bigger size = darker shade
+const FAMILY={windfoil:['#123F6B','#1F5F9E','#6E9FD4'],wingfoil:['#46236E','#6B3FA0','#A888CF'],fin:['#154A2E','#2E7D52','#6FB38B']};
+const TYPE_MID={windfoil:'#1F5F9E',wingfoil:'#6B3FA0',fin:'#2E7D52'};
+const hex2rgb=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
+const mix=(a,b,t)=>'#'+hex2rgb(a).map((c,i)=>Math.round(c+(hex2rgb(b)[i]-c)*t).toString(16).padStart(2,'0')).join('');
+function shade(fam,t){return t<=.5?mix(fam[0],fam[1],t*2):mix(fam[1],fam[2],(t-.5)*2)}
+const textOn=h=>{const [r,g,b]=hex2rgb(h);return (0.299*r+0.587*g+0.114*b)/255>0.55?'#15283A':'#fff'};
+const half=v=>Math.round(v*2)/2;
+const K2MS=0.514444;
+const UL=()=>st.unit==='kt'?'kt':'m/s';
+const toU=v=>v==null?null:(st.unit==='kt'?Math.round(v*10)/10:Math.round(v*K2MS*10)/10);
+const fromU=v=>st.unit==='kt'?v:v/K2MS;
+const fmtW=v=>v==null?'–':String(toU(v));
+
+let gid=0;
+const mkGear=(type,size,on=true,o={})=>({id:++gid,type,size,on,board:o.board??150,gearKg:o.gearKg??TYPES[type].gear,foil:o.foil??1700,ar:o.ar??'mid',low:null,high:null,manual:false});
+const defaultGear=()=>[mkGear('fin',5.8),mkGear('fin',6.7),mkGear('windfoil',7.7,false),mkGear('windfoil',6.2,false),mkGear('wingfoil',6.5,false)];
+const GEAR_DEFAULTS_VERSION=2;
+// rider + quiver are saved in this browser
+const GEAR_KEY='lakewind-gear-v1';
+function saveGear(){
+  try{ localStorage.setItem(GEAR_KEY,JSON.stringify({defaultsVersion:GEAR_DEFAULTS_VERSION,unit:st.unit,weight:st.weight,skill:st.skill,suit:st.suit,lowMode:st.lowMode,
+    gear:st.gear.map(({id,...g})=>g)})) }catch(e){}
+}
+function loadGear(){
+  try{ const s=JSON.parse(localStorage.getItem(GEAR_KEY)||'null'); if(!s) return;
+    if(Array.isArray(s.gear)){ st.gear=s.gear.filter(g=>TYPES[g.type]&&g.size>0).map(g=>({...mkGear(g.type,g.size,g.on!==false),...g,id:++gid}))
+      // gear added to the defaults later: append it (switched off) if it isn't in the saved list yet
+      if((s.defaultsVersion||1)<GEAR_DEFAULTS_VERSION) for(const d of defaultGear()) if(!st.gear.some(g=>g.type===d.type&&g.size===d.size)) st.gear.push(d) }
+    if(s.unit==='kt'||s.unit==='ms') st.unit=s.unit;
+    if(s.weight>=40&&s.weight<=140) st.weight=s.weight;
+    if(SKILL[s.skill]) st.skill=s.skill;
+    if(s.suit!=null) st.suit=+s.suit;
+    if(s.lowMode==='takeoff'||s.lowMode==='stay') st.lowMode=s.lowMode;
+  }catch(e){}
+}
+const st={
+  spots:new Set(Object.keys(SPOTS)),
+  knownYears:new Set(),
+  mFrom:4,mTo:8,years:new Set(),
+  prio:['fin','wingfoil','windfoil'],
+  weight:100,skill:'intermediate',suit:0,lowMode:'takeoff',
+  gear:defaultGear(),
+  layers:new Set(['models','gust','temp','cloud','tide']),expanded:new Set(),expandAll:false,dur:2,hFrom:8,hTo:18,unit:'kt',minT:18,dirs:Object.fromEntries(Object.keys(SPOTS).map(k=>[k,new Set(SECT)])),showAll:false,limit:150
+};
+let allYears=[];
+function refreshYears(){
+  allYears=[...new Set(Object.values(SPOTS).flatMap(s=>s.days.map(d=>d[0].slice(0,4))))].sort();
+  allYears.forEach(y=>{ if(!st.knownYears.has(y)){st.knownYears.add(y);st.years.add(y)} });
+}
+refreshYears();
+const $=id=>document.getElementById(id);
+
+function calcGear(g){
+  const T=TYPES[g.type], M=st.weight+g.gearKg+st.suit, A=Math.max(g.size,0.5);
+  const cBoard=Math.pow(Math.max(g.board,10)/st.weight/1.4,-0.15);
+  const cSkill=SKILL[st.skill][T.foil?'foil':'fin'];
+  const rig=Math.sqrt(M/A);
+  const out={M,warn:[]};
+  if(T.foil){
+    const a=AR[g.ar], vto=27.2*Math.sqrt(M/(a.cl*Math.max(g.foil,100)));
+    const vmin=T.crig*cBoard*cSkill*rig*Math.pow(vto/8,0.75)*a.eta;
+    out.vto=vto; out.vmin=vmin; out.stay=vmin*a.stay;
+    out.low=st.lowMode==='stay'?out.stay:vmin;
+    out.high=Math.min(T.cup*rig,2.25*vto);
+    if(vto>12) out.warn.push('Foil is small for this weight: long, draggy take-offs.');
+    if(vto<5) out.warn.push('Foil is very big for this weight: slow, may breach at speed.');
+  } else {
+    out.vmin=T.crig*cBoard*cSkill*rig; out.low=out.vmin; out.high=T.cup*rig;
+  }
+  if(out.low<8) out.warn.push('Below 8 kt the model extrapolates; treat as optimistic.');
+  if(out.high<=out.low) out.high=out.low+1;
+  return out;
+}
+function autoRange(g){ const c=calcGear(g); return [half(c.low),half(c.high)]; }
+function gearRange(g){ if(!g.manual){[g.low,g.high]=autoRange(g)} return [g.low,g.high]; }
+const gearLabel=g=>{const dup=TYPES[g.type].foil&&st.gear.some(x=>x!==g&&x.type===g.type&&x.size===g.size);return `${TYPES[g.type].name} ${g.size} m²${dup?' / '+g.foil+' cm²':''}`};
+const SHORT={windfoil:'foil',wingfoil:'wing',fin:'fin'};
+const gearShort=g=>`${g.size} ${SHORT[g.type]}`;
+function gearColor(g){
+  const same=st.gear.filter(x=>x.type===g.type).sort((a,b)=>b.size-a.size||a.id-b.id);
+  const n=same.length, i=same.indexOf(g);
+  const t=n<=1?0.5:0.1+0.8*i/(n-1);
+  return shade(FAMILY[g.type],t);
+}
+
+// wind speed in one calm hue (light = little wind, deep = strong)
+const RAMP=[[5,'#F1F5F4','#14232E'],[8,'#E1EEED','#14232E'],[11,'#C3E0DF','#14232E'],[14,'#9CCFCF','#14232E'],[17,'#6FB9B8','#14232E'],[20,'#3E9A9C','#0B1C22'],[25,'#1F7478','#FFFFFF'],[1e9,'#0B4F5C','#FFFFFF']];
+const RAMP_DARK=[[5,'#1A2429','#9AAAB1'],[8,'#1E2E34','#C9D6DA'],[11,'#244046','#E6EEF0'],[14,'#2E5E66','#E6EEF0'],[17,'#4A9196','#0E1417'],[20,'#7FC6C4','#0E1417'],[25,'#A6DEDB','#0E1417'],[1e9,'#C8F0EE','#0E1417']];
+const isDark=()=>document.documentElement.dataset.theme==='dark'||(document.documentElement.dataset.theme!=='light'&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches);
+function rampOf(v){ const Rm=isDark()?RAMP_DARK:RAMP; for(const r of Rm) if(v<r[0]) return r; return Rm[Rm.length-1] }
+function color(v){ return v==null?'transparent':rampOf(v)[1] }
+function colorFg(v){ return v==null?'inherit':rampOf(v)[2] }
+const sector=d=>SECT[Math.round(d/45)%8];
+const arrow=d=>`<svg viewBox="0 0 100 100" aria-hidden="true"><g transform="rotate(${d+180},50,50)"><path d="m50,0 -26,36 18,-4 -3,64 22,0 -3,-64 18,4z" fill="currentColor" opacity=".75"/></g></svg>`;
+const dObj=s=>new Date(s+'T12:00:00');
+const fmtDate=s=>dObj(s).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+const wd=s=>dObj(s).toLocaleDateString('en-GB',{weekday:'short'});
+const inMonths=m=>st.mFrom<=st.mTo?(m>=st.mFrom&&m<=st.mTo):(m>=st.mFrom||m<=st.mTo);
+const monthList=()=>{const a=[];let m=st.mFrom;for(let i=0;i<12;i++){a.push(m);if(m===st.mTo)break;m=(m+1)%12}return a};
+
+function evalDay(day,spot){
+  const [date,sp,dr,tp]=day;
+  const inWin=HOURS.map(h=>h>=st.hFrom&&h<=st.hTo);
+  const base=sp.map((v,i)=>inWin[i]&&v!=null&&dr[i]!=null&&st.dirs[spot].has(sector(dr[i]))&&(st.minT==null||(tp[i]!=null&&tp[i]>=st.minT)));
+  const hit=new Set(), works=[];
+  for(const g of st.gear){ if(!g.on) continue;
+    const [lo,hi]=gearRange(g);
+    const ok=sp.map((v,i)=>base[i]&&v>=lo&&v<=hi);
+    let s=0,best=0;
+    for(let i=0;i<=ok.length;i++){ if(i<ok.length&&ok[i]) continue; const len=i-s; if(len>best) best=len;
+      if(len>=st.dur) for(let k=s;k<i;k++) hit.add(k); s=i+1; }
+    if(best>=st.dur) works.push({g,hours:best*2});
+  }
+  works.sort((a,b)=>b.hours-a.hours);
+  const wv=sp.filter((v,i)=>inWin[i]&&v!=null), tv=tp.filter((v,i)=>inWin[i]&&v!=null);
+  return {match:works.length>0,works,hit,inWin,
+    max:wv.length?Math.max(...wv):null,avg:wv.length?Math.round(wv.reduce((a,b)=>a+b,0)/wv.length*10)/10:null,
+    tmin:tv.length?Math.min(...tv):null,tmax:tv.length?Math.max(...tv):null};
+}
+
+let results=[];
+function compute(){
+  results=[];
+  for(const key of Object.keys(SPOTS)){ if(!st.spots.has(key)) continue;
+    for(const d of SPOTS[key].days){
+      const m=+d[0].slice(5,7)-1, y=d[0].slice(0,4);
+      if(!(d[5]&&d[0]>=todayISO())&&(!inMonths(m)||!st.years.has(y))) continue;
+      results.push({spot:key,d,r:evalDay(d,key)});
+    }
+  }
+  if(st.focusDate){ for(const key of Object.keys(SPOTS)){ if(!st.spots.has(key)||key!==st.focusSpot) continue;
+      if(results.some(x=>x.spot===key&&x.d[0]===st.focusDate)) continue;
+      const d=SPOTS[key].days.find(x=>x[0]===st.focusDate); if(d) results.push({spot:key,d,r:evalDay(d,key)}) } }
+  results.sort((a,b)=>a.d[0]<b.d[0]?1:a.d[0]>b.d[0]?-1:a.spot.localeCompare(b.spot));
+}
+
+function renderSummary(){
+  const ms=monthList(), keys=Object.keys(SPOTS).filter(k=>st.spots.has(k)), on=st.gear.filter(g=>g.on);
+  const order=on.slice().sort(prefCmp);
+  const data={};
+  for(const k of keys){
+    const rs=results.filter(x=>x.spot===k);
+    const tot=new Map(on.map(g=>[g,0])); let n=0;
+    const months=ms.map(m=>{
+      const mr=rs.filter(x=>+x.d[0].slice(5,7)-1===m), yrs=new Set(mr.map(x=>x.d[0].slice(0,4))).size;
+      const cnt=new Map(on.map(g=>[g,0])); let rid=0;
+      for(const x of mr){ const pick=x.r.works.map(w=>w.g).sort(prefCmp)[0]; if(!pick) continue; rid++; cnt.set(pick,cnt.get(pick)+1); tot.set(pick,tot.get(pick)+1); n++; }
+      return {m,yrs,days:mr.length,rid,avg:yrs?rid/yrs:0,cnt};
+    });
+    data[k]={rs,n,tot,months};
+  }
+  const mx=Math.max(1,...keys.flatMap(k=>data[k].months.map(c=>c.avg)));
+  const nice=[1,2,5,10,15,20,25,31]; const ys=nice.find(v=>mx/v<=4)||10;
+  const W=560,Lp=28,Rp=6,top=18,HH=110,bot=22, H=top+HH+bot, colW=(W-Lp-Rp)/Math.max(1,ms.length), bw=Math.min(40,colW*0.62);
+  const r1=v=>Math.round(v*10)/10;
+  $('sumSpots').innerHTML = keys.length ? keys.map(k=>{
+    const D=data[k];
+    let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Average rideable days per month at ${SPOTS[k].name}, by gear used">`;
+    for(let v=ys;v<=mx+1e-9;v+=ys){const y=top+HH-v/mx*HH; s+=`<line class="grid" x1="${Lp}" x2="${W-Rp}" y1="${y}" y2="${y}"/><text x="${Lp-6}" y="${y+4}" text-anchor="end">${v}</text>`}
+    D.months.forEach((c,i)=>{
+      const cx=Lp+colW*(i+.5), x0=cx-bw/2;
+      s+=`<text x="${cx}" y="${top+HH+16}" text-anchor="middle">${MONTHS[c.m]}</text>`;
+      if(!c.yrs){ s+=`<text x="${cx}" y="${top+HH-4}" text-anchor="middle">–</text>`; return }
+      const tip=`${MONTHS[c.m]} at ${SPOTS[k].name}: ${r1(c.avg)} rideable days per month on average (${c.rid} of ${c.days} days over ${c.yrs} year${c.yrs>1?'s':''})`+
+        order.filter(g=>c.cnt.get(g)).map(g=>`\n${gearLabel(g)}: ${r1(c.cnt.get(g)/c.yrs)} per month (${c.cnt.get(g)} days)`).join('');
+      let y=top+HH;
+      order.forEach(g=>{const n=c.cnt.get(g); if(!n) return; const h=n/c.yrs/mx*HH; y-=h;
+        s+=`<rect x="${x0}" y="${y}" width="${bw}" height="${h}" fill="${gearColor(g)}"><title>${tip}</title></rect>`});
+      if(!c.rid) s+=`<rect x="${x0}" y="${top+HH-1.5}" width="${bw}" height="1.5" class="binOff"><title>${tip}</title></rect>`;
+      s+=`<text class="tot" x="${cx}" y="${y-5}" text-anchor="middle">${r1(c.avg)}</text>`;
+      s+=`<rect x="${cx-colW/2}" y="${top}" width="${colW}" height="${HH}" fill="transparent"><title>${tip}</title></rect>`;
+    });
+    s+=`<line class="axis" x1="${Lp}" x2="${W-Rp}" y1="${top+HH}" y2="${top+HH}"/></svg>`;
+    const list=order.filter(g=>D.tot.get(g)).map(g=>`<li><span class="swatch" style="background:${gearColor(g)}"></span>${gearLabel(g)}<span class="gv"><b>${D.tot.get(g)} d</b> ${D.n?Math.round(D.tot.get(g)/D.n*100):0}%</span></li>`).join('');
+    return `<div class="sumSpot"><div class="sumInfo"><h3>${SPOTS[k].name}</h3>
+      <div class="miss" style="font-size:12px;margin:-2px 0 6px">${viewLabel()}</div>
+      <div class="sumN">${D.n} <small>of ${D.rs.length} days rideable (${D.rs.length?Math.round(D.n/D.rs.length*100):0}%)</small></div>
+      <ul class="gearList">${list||'<li class="status">No rideable days</li>'}</ul></div><div class="sumChart">${s}</div></div>`}).join('')
+    : '<p class="empty">Pick at least one spot.</p>';
+  $('gearUse').innerHTML = on.length ? `Columns show the average rideable days per month across the selected years, split by the gear you'd use that day (gear preference: ${st.prio.map(p=>TYPES[p].name.toLowerCase()).join(' > ')}, then the smallest rig that works). All spots share the same scale. Hover a column for exact numbers.` : 'Turn on at least one gear to find rideable days.';
+}
+
+function renderDays(){
+  const hits=results.filter(x=>x.r.match);
+  $('count').innerHTML=`${hits.length} <small>rideable of ${results.length} spot-days</small>`;
+  const shown=st.showAll?results:results.filter(x=>x.r.match||(x.spot===st.focusSpot&&x.d[0]===st.focusDate));
+  const multi=st.spots.size>1;
+  const L=st.layers, win=i=>HOURS[i]>=st.hFrom&&HOURS[i]<=st.hTo;
+  const tcol=v=>v==null?'transparent':v>=25?'#F6B48F':v>=18?'#FAD7A8':v>=10?'#F3EBC8':v>=0?'#D6E8F3':'#B7D2EE';
+  const subRow=(cls,lab,cells)=>`<tr class="sub ${cls}"><td class="lab">${lab}</td>${cells.join('')}<td colspan="3"></td></tr>`;
+  const head=`<tr><th>Day</th>${HOURS.map(h=>`<th>${String(h).padStart(2,'0')}</th>`).join('')}<th>Gear that works</th><th>Max ${UL()}</th><th>Air °C</th></tr>`;
+  if(!shown.length){$('tbl').innerHTML=head+`<tr><td colspan="16" class="empty">No rideable days with these settings. Add larger gear, lower the minimal temperature, widen the time of day, or shorten the duration.</td></tr>`;$('more').hidden=true;return}
+  $('tbl').innerHTML=head+shown.slice(0,st.limit).map(({spot,d,r})=>{
+    const [date,sp,dr,tp,gu,fc]=d;
+    const xk=spot+'|'+date, open=st.expandAll||st.expanded.has(xk), hasL=[...L].some(k=>k==='tide'?d[8]:k==='models'?d[9]:true);
+    const offS=!inSeason(date);
+    return `<tr class="${r.match?'':'miss'} ${date===st.focusDate&&spot===st.focusSpot?'focus':''} ${offS?'offs':''}" id="row-${spot}-${date}"><td class="d">${fmtDate(date)}${offS?'<em class="offtag">off-season</em>':''}${fc?`<span class="fc" title="Forecast: ${viewLabel()}">forecast · ${d[6]||''}</span>`:`<span class="srctag" title="${viewLabel()}">${META.view==='combined'?'combined'+(d[10]&&d[10]<activeModels().length?` ${d[10]}/${activeModels().length}`:''):shortName(META.view)}</span>`}<small>${wd(date)}${multi?' · '+SPOTS[spot].name:''}</small>${hasL?`<button class="xbtn" data-x="${xk}" aria-expanded="${open}" aria-label="${open?'Hide':'Show'} details for ${fmtDate(date)}">${open?'▾ less':'▸ more'}</button>`:''}</td>${sp.map((v,i)=>`<td><div class="cell ${r.inWin[i]?'':'out'} ${r.hit.has(i)?'hit':''}" style="background:${color(v)};color:${colorFg(v)}" title="${String(HOURS[i]).padStart(2,'0')}h: ${fmtW(v)} ${UL()}${dr[i]!=null?' from '+sector(dr[i])+' ('+dr[i]+'°)':''}${gu&&gu[i]!=null?', gusts '+fmtW(gu[i])+' '+UL():''}${tp[i]!=null?', '+tp[i]+' °C':''}">${fmtW(v)}${dr[i]!=null&&v!=null?arrow(dr[i]):''}</div></td>`).join('')}<td class="g">${r.works.length?`<div class="pills">${r.works.map(w=>`<span class="pill" style="background:${gearColor(w.g)};color:${textOn(gearColor(w.g))}" title="${gearLabel(w.g)}: ${w.hours} h in range">${gearShort(w.g)} ${w.hours}h</span>`).join('')}</div>`:'–'}</td><td class="m">${fmtW(r.max)}</td><td class="t">${r.tmin==null?'–':r.tmin+' to '+r.tmax}</td></tr>`+
+    (!open?'':(L.has('models')&&d[9]?META.blend.map(m=>{const v=d[9][m], off=META.view==='combined'&&META.off.includes(m), cur=META.view===m;
+      return `<tr class="sub ${r.match?'':'miss'} ${off?'moff':''}"><td class="lab"><i style="background:${modelColor(m)}"></i>${shortName(m)}${cur?' (shown)':off?' (off)':''} ${UL()}</td>${HOURS.map((h,i)=>`<td><div class="mini ${win(i)?'':'out'}" style="background:${color(v&&v[i])};color:${colorFg(v&&v[i])}">${v&&v[i]!=null?fmtW(v[i]):'–'}</div></td>`).join('')}<td colspan="3"></td></tr>`}).join(''):'')+(L.has('gust')?subRow(r.match?'':'miss',`gusts ${UL()}`,HOURS.map((h,i)=>`<td><div class="mini ${win(i)?'':'out'}" style="background:${color(gu&&gu[i])};color:${colorFg(gu&&gu[i])}">${gu&&gu[i]!=null?fmtW(gu[i]):'–'}</div></td>`)):'')+
+    (L.has('temp')?subRow(r.match?'':'miss','air °C',HOURS.map((h,i)=>`<td><div class="mini ${win(i)?'':'out'}" style="background:${tcol(tp[i])}">${tp[i]??'–'}</div></td>`)):'')+
+    (L.has('cloud')?subRow(r.match?'':'miss','clouds %',HOURS.map((h,i)=>{const c=d[7]&&d[7][i]; return `<td><div class="mini txt cloudbar ${win(i)?'':'out'}" title="${c!=null?c+'% cloud cover':'no cloud data'}"><i style="height:${c??0}%"></i><span>${c??'–'}</span></div></td>`})):'')+
+    (L.has('tide')&&d[8]?subRow(r.match?'':'miss','tide m',HOURS.map((h,i)=>{const v=d[8][i]; return `<td><div class="mini txt ${win(i)?'':'out'}" title="Sea level vs mean sea level (not for navigation)">${v==null?'–':(v>0?'+':'')+v.toFixed(2)}</div></td>`})):''));
+  }).join('');
+  $('more').hidden=shown.length<=st.limit;
+  $('more').textContent=`Show more days (${shown.length-st.limit} left)`;
+}
+
+function renderGear(){
+  saveGear(); try{panelSums()}catch(e){}
+  document.querySelectorAll('.rUnit').forEach(x=>x.textContent=UL());
+  $('gearBody').innerHTML=st.gear.map(g=>{const [lo,hi]=gearRange(g), c=calcGear(g), T=TYPES[g.type], dis=T.foil?'':'disabled';
+    const warn=c.warn.length?`<span class="warn" title="${c.warn.join(' ')}" aria-label="${c.warn.join(' ')}">⚠</span>`:'';
+    return `<tr class="${g.on?'':'off'}" data-id="${g.id}">
+    <td><input type="checkbox" data-k="on" ${g.on?'checked':''} aria-label="Use ${gearLabel(g)}"></td>
+    <td><span class="swatch" style="background:${gearColor(g)}"></span><select data-k="type" aria-label="Type">${Object.entries(TYPES).map(([k,x])=>`<option value="${k}" ${k===g.type?'selected':''}>${x.name}</option>`).join('')}</select></td>
+    <td><input class="w" type="number" data-k="size" min="1" max="14" step="0.1" value="${g.size}" aria-label="Rig size in square metres"></td>
+    <td><input class="w" type="number" data-k="board" min="20" max="300" step="5" value="${g.board}" aria-label="Board volume in litres"></td>
+    <td><input class="w" type="number" data-k="gearKg" min="0" max="40" step="1" value="${g.gearKg}" aria-label="Gear weight in kg"></td>
+    <td>${T.foil?`<input class="w" type="number" data-k="foil" min="300" max="3500" step="50" value="${g.foil}" aria-label="Front wing area in square centimetres">`:'<span class="status">–</span>'}</td>
+    <td>${T.foil?`<select class="sm" data-k="ar" aria-label="Front wing shape">${Object.entries(AR).map(([k,a])=>`<option value="${k}" ${k===g.ar?'selected':''}>${a.name}</option>`).join('')}</select>`:'<span class="status">–</span>'}</td>
+    <td><div class="rng"><input class="w" type="number" data-k="low" min="0.5" max="60" step="${st.unit==='kt'?0.5:0.1}" value="${toU(lo)}" aria-label="Lowest wind in ${UL()}"> – <input class="w" type="number" data-k="high" min="0.5" max="60" step="${st.unit==='kt'?0.5:0.1}" value="${toU(hi)}" aria-label="Highest wind in ${UL()}">
+      ${g.manual?`<button class="x" data-k="reset" title="Back to automatic range" aria-label="Reset range">↺</button>`:'<span class="auto">auto</span>'}${warn}</div></td>
+    <td class="vto">${T.foil?toU(half(c.stay)):'<span class="status">–</span>'}</td><td class="vto">${T.foil?toU(c.vto):'<span class="status">–</span>'}</td>
+    <td><button class="x" data-k="del" aria-label="Remove ${gearLabel(g)}">×</button></td></tr>`}).join('');
+}
+$('gearBody').addEventListener('change',e=>{
+  const tr=e.target.closest('tr'); if(!tr) return; const g=st.gear.find(x=>x.id==tr.dataset.id); const k=e.target.dataset.k;
+  const num=()=>parseFloat(e.target.value);
+  if(k==='on'){ g.on=e.target.checked; g.pinned=g.on }
+  if(k==='type'){g.type=e.target.value;g.gearKg=TYPES[g.type].gear;g.manual=false}
+  if(k==='size'){const v=num(); if(v>0) g.size=Math.round(v*10)/10; g.manual=false}
+  if(k==='board'){const v=num(); if(v>0) g.board=v; g.manual=false}
+  if(k==='gearKg'){const v=num(); if(v>=0) g.gearKg=v; g.manual=false}
+  if(k==='foil'){const v=num(); if(v>0) g.foil=v; g.manual=false}
+  if(k==='ar'){g.ar=e.target.value; g.manual=false}
+  if(k==='low'||k==='high'){const v=num(); if(!isNaN(v)){gearRange(g); g[k]=Math.round(fromU(v)*100)/100; g.manual=true; if(g.low>g.high){const t=g.low;g.low=g.high;g.high=t}}}
+  renderGear(); update();
+});
+$('gearBody').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b) return; const tr=b.closest('tr'); const g=st.gear.find(x=>x.id==tr.dataset.id);
+  if(b.dataset.k==='del') st.gear=st.gear.filter(x=>x!==g);
+  if(b.dataset.k==='reset') g.manual=false;
+  renderGear(); update();
+});
+$('resetGear').onclick=()=>{ if(!confirm('Replace your gear list with the default (Fin 5.8 and 6.7 m² on; Windfoil 7.7 and 6.2 m² and Wingfoil 6.5 m² off)?')) return; st.gear=defaultGear(); renderGear(); update() };
+$('addGear').onclick=()=>{st.gear.push(mkGear('windfoil',6.5)); renderGear(); update(); const ins=$('gearBody').querySelectorAll('tr:last-child input[data-k=size]'); ins[0]&&ins[0].focus()};
+
+function chips(el,items,isOn,onClick){
+  el.innerHTML=items.map(([v,l])=>`<button class="chip" data-v="${v}" aria-pressed="${isOn(v)}">${l}</button>`).join('');
+  el.querySelectorAll('button').forEach(b=>b.onclick=()=>onClick(b.dataset.v));
+}
+function spotChips(){chips($('spots'),Object.entries(SPOTS).map(([k,s])=>[k,s.name]),k=>st.spots.has(k),k=>{st.spots.has(k)?st.spots.delete(k):st.spots.add(k); if(!st.spots.size) st.spots.add(k); spotChips(); dirChips(); update()})}
+function yearChips(){chips($('years'),allYears.map(y=>[y,y]),y=>st.years.has(y),y=>{st.years.has(y)?st.years.delete(y):st.years.add(y); if(!st.years.size) st.years.add(y); yearChips(); update()})}
+const DEG={N:0,NE:45,E:90,SE:135,S:180,SW:225,W:270,NW:315};
+const chipArrow=s=>`<svg class="da" viewBox="0 0 100 100" aria-hidden="true"><g transform="rotate(${DEG[s]+180},50,50)"><path d="m50,4 -30,40 20,-5 -2,57 24,0 -2,-57 20,5z" fill="currentColor"/></g></svg>`;
+function dirChips(){
+  const keys=Object.keys(SPOTS).filter(k=>st.spots.has(k));
+  $('dirs').innerHTML=keys.map(k=>{const set=st.dirs[k], all=set.size===8;
+    const btn=s=>`<button class="chip dchip" data-spot="${k}" data-v="${s}" aria-pressed="${!all&&set.has(s)}" title="Wind from ${s}" aria-label="Wind from ${s}">${chipArrow(s)}</button>`;
+    return `<div class="dirRow"><b>${SPOTS[k].name}</b><div class="compass" role="group" aria-label="Wind direction for ${SPOTS[k].name}">${btn('NW')}${btn('N')}${btn('NE')}${btn('W')}<button class="chip dchip any" data-spot="${k}" data-v="all" aria-pressed="${all}" title="Any direction">Any</button>${btn('E')}${btn('SW')}${btn('S')}${btn('SE')}</div></div>`}).join('');
+  $('dirs').querySelectorAll('button').forEach(b=>b.onclick=()=>{
+    const k=b.dataset.spot, s=b.dataset.v; let set=st.dirs[k];
+    if(s==='all') SECT.forEach(x=>set.add(x));
+    else if(set.size===8) st.dirs[k]=new Set([s]);
+    else {set.has(s)?set.delete(s):set.add(s); if(!set.size) SECT.forEach(x=>set.add(x))}
+    dirChips(); update()});
+}
+
+// preferred gear for a day: types in the chosen order (default fin > wingfoil > windfoil), within a type the smallest rig that works
+const prefCmp=(a,b)=>st.prio.indexOf(a.type)-st.prio.indexOf(b.type)||a.size-b.size||a.id-b.id;
+function renderPrio(){
+  $('prio').innerHTML=st.prio.map((k,i)=>`${i?'<span class="status">›</span>':''}<span class="prioItem"><span class="swatch" style="background:${TYPE_MID[k]}"></span>${TYPES[k].name}
+    <button class="x mv" data-i="${i}" data-d="-1" ${i===0?'disabled':''} aria-label="Move ${TYPES[k].name} earlier">◀</button><button class="x mv" data-i="${i}" data-d="1" ${i===st.prio.length-1?'disabled':''} aria-label="Move ${TYPES[k].name} later">▶</button></span>`).join('');
+  $('prio').querySelectorAll('button').forEach(b=>b.onclick=()=>{const i=+b.dataset.i,j=i+ +b.dataset.d; [st.prio[i],st.prio[j]]=[st.prio[j],st.prio[i]]; renderPrio(); renderCoverage(); renderSummary()});
+}
+function renderCoverage(){
+  const on=st.gear.filter(g=>g.on);
+  const MAXK=30, yes=new Array(MAXK+1).fill(0), no=new Array(MAXK+1).fill(0); let total=0, rideable=0;
+  const byDate=new Map();
+  for(const {spot,d,r} of results){ const [date,sp,dr,tp]=d;
+    const ok=sp.map((v,i)=>{const h=HOURS[i]; return v!=null&&h>=st.hFrom&&h<=st.hTo&&dr[i]!=null&&st.dirs[spot].has(sector(dr[i]))&&(st.minT==null||(tp[i]!=null&&tp[i]>=st.minT))});
+    let best=null;
+    for(let i=0;i+st.dur<=sp.length;i++){ let m=Infinity,good=true;
+      for(let k=i;k<i+st.dur;k++){ if(!ok[k]){good=false;break} m=Math.min(m,sp[k]) }
+      if(good&&(best==null||m>best)) best=m; }
+    if(best==null) continue;
+    const pick=r.works.map(w=>w.g).sort(prefCmp)[0]||null;
+    const cur=byDate.get(date);
+    // one entry per date: rideable if any spot is; use the most preferred gear across spots
+    const better=!cur||(pick&&(!cur.pick||prefCmp(pick,cur.pick)<0))||(!pick&&!cur.pick&&best>cur.best);
+    if(better) byDate.set(date,{match:!!pick,best,pick});
+  }
+  const used=new Map(on.map(g=>[g,new Array(MAXK+1).fill(0)])), usedTot=new Map(on.map(g=>[g,0]));
+  for(const {match,best,pick} of byDate.values()){
+    const b=Math.min(MAXK,Math.round(best)); total++;
+    if(match){yes[b]++;rideable++;used.get(pick)[b]++;usedTot.set(pick,usedTot.get(pick)+1)} else no[b]++;
+  }
+  const pct=n=>{if(!rideable||!n) return 0; const p=n/rideable*100; return p<1?'<1':Math.round(p)};
+  const typeTot={}; Object.keys(TYPES).forEach(k=>typeTot[k]=on.filter(g=>g.type===k).reduce((a,g)=>a+usedTot.get(g),0));
+  $('typeCounts').innerHTML=Object.keys(TYPES).map(k=>{const has=on.some(g=>g.type===k);
+    return `<span title="Days ${TYPES[k].name.toLowerCase()} is the gear you'd pick (${st.prio.map(p=>TYPES[p].name.toLowerCase()).join(' > ')}; smallest rig that works)"><span class="swatch" style="background:${TYPE_MID[k]}"></span>${TYPES[k].name}<b>${has?pct(typeTot[k])+'%':'–'}</b> <span class="status">${has?typeTot[k]+' days':'no gear on'}</span></span>`}).join('');
+
+  const order=on.slice().sort(prefCmp);
+  const W=1000,L=140,R=120,plotW=W-L-R,HH=120,rowH=22,top=10;
+  const x=v=>L+Math.min(v,MAXK+0.5)/(MAXK+0.5)*plotW;
+  const bw=plotW/(MAXK+1)*0.8, mx=Math.max(1,...yes.map((v,i)=>v+no[i]));
+  const H=top+HH+26+order.length*rowH+6;
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Days by sustained wind speed, gear used and gear ranges">`;
+  const step=st.unit==='kt'?5:2, maxU=st.unit==='kt'?MAXK:Math.floor(MAXK*K2MS);
+  for(let u=0;u<=maxU;u+=step){const k=fromU(u),xx=x(k);
+    s+=`<line class="grid" x1="${xx}" x2="${xx}" y1="${top}" y2="${H-4}"/><text x="${xx}" y="${top+HH+18}" text-anchor="middle">${u}</text>`}
+  const nice=[1,2,5,10,20,25,50,100,200,250,500]; const ys=nice.find(n=>mx/n<=4)||1000;
+  for(let v=ys;v<=mx;v+=ys){const yy=top+HH-v/mx*HH; s+=`<line class="grid" x1="${L}" x2="${W-R}" y1="${yy}" y2="${yy}"/><text x="${L-8}" y="${yy+4}" text-anchor="end">${v}</text>`}
+  s+=`<text x="${L-10}" y="${top+HH+18}" text-anchor="end">${UL()}</text>`;
+  s+=`<text x="${L-40}" y="${top+10}" text-anchor="end">days</text>`;
+  s+=`<text x="${W-R+14}" y="${top+HH+18}">gear used</text>`;
+  for(let k=0;k<=MAXK;k++){ const a=yes[k],b=no[k]; if(!a&&!b) continue;
+    const x0=x(k)-bw/2, ha=a/mx*HH, hb=b/mx*HH;
+    const tip=`Sustained ${toU(k)} ${UL()}: ${a+b} days, ${a} rideable`+order.filter(g=>used.get(g)[k]).map(g=>`\n${gearLabel(g)}: ${used.get(g)[k]} days`).join('');
+    if(b) s+=`<rect class="binOff" x="${x0}" y="${top+HH-ha-hb}" width="${bw}" height="${hb}"><title>${tip}</title></rect>`;
+    let y=top+HH;
+    order.forEach(g=>{const n=used.get(g)[k]; if(!n) return; const h=n/mx*HH; y-=h;
+      s+=`<rect x="${x0}" y="${y}" width="${bw}" height="${h}" fill="${gearColor(g)}"><title>${tip}</title></rect>`});
+  }
+  s+=`<line class="axis" x1="${L}" x2="${W-R}" y1="${top+HH}" y2="${top+HH}"/>`;
+  order.forEach((g,i)=>{const [lo,hi]=gearRange(g), y=top+HH+30+i*rowH, n=usedTot.get(g);
+    s+=`<rect class="track" x="${L}" y="${y}" width="${plotW}" height="12" rx="6"/>`;
+    s+=`<rect x="${x(lo)}" y="${y}" width="${Math.max(3,x(hi)-x(lo))}" height="12" rx="6" fill="${gearColor(g)}"><title>${gearLabel(g)}: ${toU(lo)}–${toU(hi)} ${UL()}</title></rect>`;
+    s+=`<text class="gl" x="${L-10}" y="${y+10}" text-anchor="end">${gearLabel(g)}</text>`;
+    s+=`<text class="gl" x="${W-R+14}" y="${y+10}">${pct(n)}%</text><text x="${W-R+54}" y="${y+10}">${n} d</text>`});
+  s+='</svg>';
+  $('covChart').innerHTML=total?s:'<p class="status">No days match the current filters.</p>';
+  $('covStat').textContent=total?`${rideable} of ${total} days rideable (${Math.round(rideable/total*100)}%)`:'';
+}
+const FOLD_KEY='lakewind-panels-v1';
+function panelSums(){
+  const S=(id,h)=>{const el=$('s-'+id); if(el) el.innerHTML=h};
+  const ks=Object.keys(SPOTS), got=ks.filter(k=>Object.keys(SPOTS[k].m||{}).length).length;
+  const last=Object.values(SPOTS).map(s=>s.updated).filter(Boolean).sort().pop();
+  S('data',`${ks.length} spot${ks.length!==1?'s':''}${got<ks.length?` · <b>${ks.length-got} without data</b>`:''} · ${viewLabel()}${last?' · updated '+new Date(last).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):''}${$('dataStatus')&&$('dataStatus').textContent?' · '+$('dataStatus').textContent:''}`);
+  S('where',`${Object.keys(SPOTS).filter(k=>st.spots.has(k)).map(k=>SPOTS[k].name).join(', ')} · ${MONTHS[st.mFrom]}–${MONTHS[st.mTo]} · ${[...st.years].sort().join(', ')}`);
+  const on=st.gear.filter(g=>g.on);
+  S('gear',`${st.weight} kg · ${on.length} of ${st.gear.length} gear on${on.length?': '+on.map(g=>`${g.size} ${SHORT[g.type]}`).join(', '):''}`);
+  const dirsSet=Object.keys(SPOTS).filter(k=>st.spots.has(k)&&st.dirs[k]&&st.dirs[k].size<8).length;
+  S('cond',`${st.dur*2} h+ · ${String(st.hFrom).padStart(2,'0')}–${String(st.hTo).padStart(2,'0')}h · ${st.minT==null?'any temp':'≥ '+st.minT+' °C'}${dirsSet?` · direction limited at ${dirsSet} spot${dirsSet>1?'s':''}`:''} · ${UL()}`);
+  S('sum',`${results.filter(x=>x.r.match).length} rideable spot-days`);
+}
+function initFolds(){
+  let saved={}; try{ saved=JSON.parse(localStorage.getItem(FOLD_KEY)||'{}') }catch(e){}
+  document.querySelectorAll('details.fold').forEach(d=>{ d.open=saved[d.dataset.sec]!==false;
+    d.addEventListener('toggle',()=>{ saved[d.dataset.sec]=d.open; try{ localStorage.setItem(FOLD_KEY,JSON.stringify(saved)) }catch(e){}
+      if(d.open) { if(d.dataset.sec==='gear') renderCoverage(); if(d.dataset.sec==='sum') renderSummary() } }) });
+}
+const inSeason=date=>inMonths(+date.slice(5,7)-1);
+const seasonName=()=>`${MONTHS[st.mFrom]}–${MONTHS[st.mTo]}`;
+function seasonBounds(year){ // for a season that may wrap over New Year, return the one containing or ending in `year`
+  const y=+year, wrap=st.mFrom>st.mTo;
+  const start=new Date(wrap?y-1:y,st.mFrom,1), end=new Date(y,st.mTo+1,0);
+  return {start:isoDay(start),end:isoDay(end)};
+}
+function seasonState(){
+  const today=todayISO(), y=+today.slice(0,4);
+  let b=seasonBounds(y); if(st.mFrom>st.mTo&&today>b.end) b=seasonBounds(y+1);
+  if(today<b.start) return {state:'before',...b};
+  if(today>b.end) return {state:'after',...b};
+  return {state:'in',...b};
+}
+const longDate=s=>dObj(s).toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+function hitWindow(r){ const hs=[...r.hit].sort((a,b)=>a-b); return hs.length?`${String(HOURS[hs[0]]).padStart(2,'0')}–${String(Math.min(24,HOURS[hs[hs.length-1]]+2)).padStart(2,'0')}h`:'' }
+function verdictFor(d,spot){
+  const r=evalDay(d,spot);
+  if(r.match) return {v:'ride',r};
+  const save=st.dur; st.dur=1; const r1=evalDay(d,spot); st.dur=save;
+  return {v:r1.match?'maybe':'no',r:r1.match?r1:r};
+}
+function modelAgreement(s,spot,date,verdict){
+  const act=META.view==='combined'?activeModels():[META.view]; let yes=0,n=0;
+  for(const m of act){ const dm=s.idx&&s.idx[m]&&s.idx[m].get(date); if(!dm) continue; n++;
+    const ride=evalDay(dm,spot).match; if((verdict==='ride')===ride) yes++ }
+  return {yes,n};
+}
+const openCards=new Set();
+function renderNext(){
+  const today=todayISO(), keys=Object.keys(SPOTS).filter(k=>st.spots.has(k));
+  const dates=[...new Set(keys.flatMap(k=>SPOTS[k].days.filter(d=>d[5]&&d[0]>=today).map(d=>d[0])))].sort();
+  // quiver chips
+  st.gear.forEach(g=>{ if(g.pinned===undefined) g.pinned=g.on });
+  $('qchips').innerHTML=st.gear.filter(g=>g.on||g.pinned).map(g=>{const c=gearColor(g), [lo,hi]=gearRange(g);
+    return `<button type="button" class="qchip ${g.on?'on':'faded'}" data-gid="${g.id}" aria-pressed="${g.on}" title="${g.on?'Tap to leave out':'Tap to use again'}" style="background:${c};border-color:${c};color:${textOn(c)}">${g.size} ${SHORT[g.type]} <small>${toU(lo)}–${toU(hi)} ${UL()}</small></button>`}).join('');
+  $('qchips').querySelectorAll('[data-gid]').forEach(b=>b.onclick=()=>{const g=st.gear.find(x=>x.id==b.dataset.gid); g.on=!g.on; g.pinned=true; renderGear(); update(); const nb=document.querySelector(`[data-gid="${g.id}"]`); nb&&nb.focus()});
+  if(!dates.length){ $('nextBig').textContent='No forecast yet'; $('nextSmall').textContent='Open Spots and press "Download all spots".';
+    $('dcards').innerHTML='<div class="empty2">Forecast days appear here after the first download.</div>'; return }
+  let rideDays=0, best=null;
+  const cards=dates.map((date,di)=>{
+    const off=!inSeason(date), prevOff=di>0?!inSeason(dates[di-1]):null;
+    const divider=di>0&&off!==prevOff?(off?`<div class="sdiv" role="separator"><span>Season ends · ${longDate(dates[di-1])}</span></div>`:`<div class="sdiv start" role="separator"><span>Season starts · ${longDate(date)}</span></div>`):(di===0&&off?`<div class="sdiv" role="separator"><span>Outside your season (${seasonName()})</span></div>`:'');
+    const per=keys.map(k=>{const d=SPOTS[k].days.find(x=>x[0]===date); if(!d) return null; const vv=verdictFor(d,k); const pick=vv.r.works.map(w=>w.g).sort(prefCmp)[0]; const hrs=vv.r.works.reduce((a,w)=>Math.max(a,w.hours),0);
+      return {k,d,...vv,pick,hrs,ag:modelAgreement(SPOTS[k],k,date,vv.v)}}).filter(Boolean);
+    const rank={ride:0,maybe:1,no:2};
+    per.sort((a,b)=>rank[a.v]-rank[b.v]||(a.pick&&b.pick?prefCmp(a.pick,b.pick):0)||b.hrs-a.hrs||(b.ag.yes-a.ag.yes));
+    const top=per[0]; if(top.v==='ride'){ rideDays++; if(!best||top.hrs>best.hrs) best={...top,date} }
+    const inWin=HOURS.map((h,i)=>i).filter(i=>HOURS[i]>=st.hFrom&&HOURS[i]<=st.hTo);
+    const strip=inWin.map(i=>`<span style="background:${color(top.d[1][i])}" title="${String(HOURS[i]).padStart(2,'0')}h ${fmtW(top.d[1][i])} ${UL()}"></span>`).join('');
+    const dots=`<span class="dots" aria-hidden="true">${Array.from({length:top.ag.n},(_,i)=>`<i class="${i<top.ag.yes?'y':''}"></i>`).join('')}</span>`;
+    const lbl={ride:'Ride',maybe:'Maybe',no:'No'};
+    return divider+`<button type="button" class="dcard${off?' off':''}" data-card="${date}" data-spot="${top.k}" aria-label="${dObj(date).toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'})}, ${SPOTS[top.k].name}: ${lbl[top.v]}. Open this day in Season"><span class="top">
+      <span class="dd">${dObj(date).toLocaleDateString('en-GB',{weekday:'short'})} ${+date.slice(8)}${off?'<em class="offtag">off-season</em>':''}</span>
+      <span class="vpill ${top.v}">${lbl[top.v]}</span>
+      <span class="gear">${top.pick?`<i class="gdot" style="background:${gearColor(top.pick)}"></i>${top.pick.size} ${SHORT[top.pick.type]}`:'<span style="color:var(--muted);font-weight:600">No gear fits</span>'}</span>
+      <span class="spot">${keys.length>1&&top.v!=='no'?SPOTS[top.k].name:''}</span></span>
+      <span class="strip" style="grid-template-columns:repeat(${inWin.length},minmax(0,1fr))">${strip}</span>
+      <span class="meta"><span>${top.v==='no'?`Max ${fmtW(top.r.max)} ${UL()} · too ${top.r.max!=null&&st.gear.some(g=>g.on&&top.r.max>gearRange(g)[1])?'strong':'light'} for your gear`:`${hitWindow(top.r)} · ${fmtW(Math.min(...top.r.hit.size?[...top.r.hit].map(i=>top.d[1][i]):[0]))}–${fmtW(Math.max(...top.r.hit.size?[...top.r.hit].map(i=>top.d[1][i]):[0]))} ${UL()}`}</span><span>${dots}${top.ag.yes}/${top.ag.n} models agree</span></span>
+    </button>`;
+  });
+  $('nextBig').innerHTML=`${rideDays} rideable day${rideDays!==1?'s':''} <span>in the next ${dates.length}</span>`;
+  $('nextSmall').textContent=best?`Best: ${dObj(best.date).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})} at ${SPOTS[best.k].name} · ${best.pick.size} ${SHORT[best.pick.type]} ${hitWindow(best.r)} · ${best.ag.yes}/${best.ag.n} models agree`:(st.gear.some(g=>g.on)?'Nothing rideable with the gear that is switched on.':'Switch on at least one piece of gear.');
+  const ss=seasonState(), offN=dates.filter(d=>!inSeason(d)).length;
+  const sline=ss.state==='in'?(offN?`Your season (${seasonName()}) ends ${longDate(ss.end)}; ${offN} of these days ${offN>1?'are':'is'} after it.`:''):ss.state==='after'?`Off-season: your season (${seasonName()}) ended ${longDate(ss.end)}.`:`Off-season: your season (${seasonName()}) starts ${longDate(ss.start)}.`;
+  $('seasonNote').hidden=!sline; $('seasonNote').className='snote '+(ss.state==='in'?'in':'out'); $('seasonNote').textContent=sline;
+  $('dcards').innerHTML=cards.join('');
+  $('dcards').querySelectorAll('[data-card]').forEach(b=>b.onclick=()=>openDay(b.dataset.card,b.dataset.spot));
+}
+st.calSpot=null;
+function openDay(date,spot){
+  st.focusDate=date; st.focusSpot=spot; st.expandAll=false;
+  st.expanded=new Set([spot+'|'+date]);
+  showTab('season'); update();
+  requestAnimationFrame(()=>{ const row=document.querySelector('.days tr.focus'); if(row){ const grid=row.closest('.grid'), ths=grid.querySelectorAll('th'); const th=ths[1+Math.max(0,HOURS.indexOf(st.hFrom))]; if(th) grid.scrollLeft=th.offsetLeft-ths[0].offsetWidth-4; row.scrollIntoView({block:'start',behavior:'smooth'}); const b=row.querySelector('.xbtn'); b&&b.focus({preventScroll:true}) } });
+}
+function renderCalendar(){
+  const keys=Object.keys(SPOTS).filter(k=>st.spots.has(k));
+  if(!keys.length){ $('calBody').innerHTML=''; return }
+  if(!keys.includes(st.calSpot)) st.calSpot=keys.includes('novemlyny')?'novemlyny':keys[0];
+  $('calSpots').innerHTML=keys.map(k=>`<button type="button" class="chip" data-cs="${k}" aria-pressed="${k===st.calSpot}">${SPOTS[k].name}</button>`).join('');
+  $('calSpots').querySelectorAll('[data-cs]').forEach(b=>b.onclick=()=>{st.calSpot=b.dataset.cs; renderCalendar()});
+  const rs=results.filter(x=>x.spot===st.calSpot&&!x.d[5]);
+  const year=rs.length?rs.map(x=>x.d[0].slice(0,4)).sort().pop():String(new Date().getFullYear());
+  const yr=rs.filter(x=>x.d[0].startsWith(year)), by=new Map(yr.map(x=>[x.d[0],x]));
+  const ms=monthList(); let first=new Date(+year,ms[0],1), last=new Date(+year,ms[ms.length-1]+1,0);
+  if(st.mFrom>st.mTo){ first=new Date(+year,0,1); last=new Date(+year,11,31) }
+  const start=new Date(first); start.setDate(start.getDate()-((start.getDay()+6)%7)); // Monday
+  const weeks=[]; for(let d=new Date(start); d<=last; d.setDate(d.getDate()+7)) weeks.push(new Date(d));
+  const cnt=new Map(); let total=0;
+  const cells=[];
+  for(let row=0;row<7;row++) for(const w of weeks){ const d=new Date(w); d.setDate(d.getDate()+row); const iso=isoDay(d);
+    const inRange=d>=first&&d<=last, x=by.get(iso); let bg='', tip=`${d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})}: `;
+    if(!inRange){ cells.push('<span style="visibility:hidden"></span>'); continue }
+    if(x&&x.r.match){ const g=x.r.works.map(w=>w.g).sort(prefCmp)[0]; bg=gearColor(g); cnt.set(g,(cnt.get(g)||0)+1); total++; tip+=`${g.size} ${SHORT[g.type]}` } else tip+=x?'not rideable':'no data';
+    cells.push(`<span title="${tip}"${bg?` style="background:${bg}"`:''}></span>`) }
+  const monthLbl=weeks.map(w=>{const e=new Date(w); e.setDate(e.getDate()+6); return ((e.getDate()<=7&&e>=first)||(w<=first&&e>=first))&&e<=last?`<span>${e.toLocaleDateString('en-GB',{month:'short'})}</span>`:'<span></span>'}).join('');
+  $('calHead').textContent=`${SPOTS[st.calSpot].name}: ${total} rideable day${total!==1?'s':''} in ${year}`;
+  { const ss=seasonState(); const b=$('seasonBanner'); b.hidden=false;
+    if(ss.state==='in'){ const left=Math.round((dObj(ss.end)-dObj(todayISO()))/864e5); b.className='snote in'; b.innerHTML=`<b>Season in progress</b> · ${seasonName()} · ${left} day${left!==1?'s':''} left (ends ${longDate(ss.end)})` }
+    else if(ss.state==='after'){ b.className='snote out'; b.innerHTML=`<b>Season over</b> · ${seasonName()} ended ${longDate(ss.end)}. Days after it are marked “off-season”.` }
+    else { b.className='snote out'; b.innerHTML=`<b>Off-season</b> · your season (${seasonName()}) starts ${longDate(ss.start)}.` } }
+  $('calBody').innerHTML=`<div class="calmonths" style="grid-template-columns:repeat(${weeks.length},minmax(0,1fr))">${monthLbl}</div><div class="calgrid" style="grid-template-columns:repeat(${weeks.length},minmax(0,1fr))" role="img" aria-label="Calendar of rideable days in ${year}, coloured by gear">${cells.join('')}</div>`;
+  const mx=Math.max(1,...cnt.values());
+  $('calBars').innerHTML=[...cnt.entries()].sort((a,b)=>b[1]-a[1]).map(([g,n])=>`<div class="gbar"><div class="row1"><span style="font-weight:600">${g.size} ${SHORT[g.type]}</span><b>${n} d</b></div><div class="trk"><i style="width:${Math.round(n/mx*100)}%;background:${gearColor(g)}"></i></div></div>`).join('')||'<span class="status">No rideable days with these settings.</span>';
+}
+function renderWhen(){
+  if($('appVer')) $('appVer').textContent='v'+APP_VERSION;
+  const last=Object.values(SPOTS).map(s=>s.updated).filter(Boolean).sort().pop();
+  const fcEnd=Object.keys(SPOTS).filter(k=>st.spots.has(k)).map(k=>(SPOTS[k].days.filter(d=>d[5]).pop()||[])[0]).filter(Boolean).sort().pop();
+  $('when').innerHTML=`${Object.keys(SPOTS).filter(k=>st.spots.has(k)).length} spots · ${META.view==='combined'?activeModels().length+'-model blend':shortName(META.view)}${last?'<br>updated '+new Date(last).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):''}${fcEnd?' · forecast to '+dObj(fcEnd).toLocaleDateString('en-GB',{day:'numeric',month:'short'}):''}`;
+}
+let lastSeenDay=null;
+function refreshIfStale(){
+  if(busy) return;
+  const ks=Object.keys(SPOTS).filter(k=>Object.keys(SPOTS[k].m||{}).length); if(!ks.length) return;
+  const last=Object.values(SPOTS).map(s=>s.updated).filter(Boolean).sort().pop();
+  if(!lastSeenDay) lastSeenDay=todayISO();
+  const old=!last||Date.now()-new Date(last).getTime()>3*3600e3, newDay=todayISO()!==lastSeenDay;
+  if(newDay){ lastSeenDay=todayISO(); rebuildAll(); afterDataChange() }
+  if(old||newDay) runDownload(ks,'update');
+}
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') refreshIfStale() });
+setInterval(refreshIfStale,15*60e3);
+const TAB_KEY='lakewind-tab-v1';
+function showTab(id){
+  document.querySelectorAll('.tab').forEach(s=>s.hidden=s.id!=='tab-'+id);
+  if(id==='next'&&st.focusDate){ st.focusDate=null; st.focusSpot=null; try{update()}catch(e){} }
+  document.querySelectorAll('.tabbar [data-tab]').forEach(b=>b.setAttribute('aria-current',b.dataset.tab===id?'page':'false'));
+  try{localStorage.setItem(TAB_KEY,id)}catch(e){}
+  window.scrollTo(0,0);
+}
+document.querySelectorAll('.tabbar [data-tab]').forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
+function update(){ st.limit=150; compute(); renderSummary(); renderDays(); renderCoverage(); renderNext(); renderCalendar(); renderWhen(); panelSums();}
+
+// CSV
+function csvCell(v){ if(v==null) return ''; const s=String(v); return /[",\n;]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; }
+function buildCSV(){
+  const rows=st.showAll?results:results.filter(x=>x.r.match);
+  const hdr=['spot','date','weekday','forecast','source','rideable','gear_that_works','best_gear','best_gear_hours','max_wind_'+(st.unit==='kt'?'kt':'ms'),'avg_wind_'+(st.unit==='kt'?'kt':'ms'),'temp_min_c','temp_max_c',
+    ...HOURS.map(h=>'wind_'+String(h).padStart(2,'0')+'_'+(st.unit==='kt'?'kt':'ms')),...HOURS.map(h=>'gust_'+String(h).padStart(2,'0')+'_'+(st.unit==='kt'?'kt':'ms')),...HOURS.map(h=>'dir_'+String(h).padStart(2,'0')),...HOURS.map(h=>'temp_'+String(h).padStart(2,'0')),...HOURS.map(h=>'cloud_'+String(h).padStart(2,'0')+'_pct'),...HOURS.map(h=>'tide_'+String(h).padStart(2,'0')+'_m'),...META.blend.flatMap(m=>HOURS.map(h=>'wind_'+String(h).padStart(2,'0')+'_'+(st.unit==='kt'?'kt':'ms')+'_'+shortName(m).toLowerCase().replace(/[^a-z0-9]+/g,'')))];
+  const lines=[hdr.join(',')];
+  for(const {spot,d,r} of rows){
+    const [date,sp,dr,tp,gu,fc]=d;
+    lines.push([SPOTS[spot].name,date,wd(date),fc?'yes':'no',viewLabel(),r.match?'yes':'no',r.works.map(w=>`${gearLabel(w.g)} (${w.hours}h)`).join('; '),
+      r.works[0]?gearLabel(r.works[0].g):'',r.works[0]?r.works[0].hours:'',toU(r.max),toU(r.avg),r.tmin,r.tmax,...sp.map(toU),...(gu||Array(12).fill(null)).map(toU),...dr,...tp,...(d[7]||Array(12).fill(null)),...(d[8]||Array(12).fill(null)),...META.blend.flatMap(m=>(d[9]&&d[9][m]||Array(12).fill(null)).map(toU))].map(csvCell).join(','));
+  }
+  return '\ufeff'+lines.join('\r\n');
+}
+let downloads=null;
+(async()=>{ try{ if(window.claude&&window.claude.use) downloads=await window.claude.use('downloads'); }catch(e){downloads=null} })();
+async function saveText(name,data,mime,statusEl,okMsg){
+  statusEl.textContent='';
+  if(downloads){
+    try{ const r=await downloads.save({filename:name,data}); statusEl.textContent=r.status==='saved'?okMsg:''; }
+    catch(e){ const c=e&&e.code; statusEl.textContent=c==='declined'?'Export cancelled.':c==='rate_limited'?'A save prompt is already open.':'Export is not available in this view.'; }
+  } else {
+    try{ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([data],{type:mime})); a.download=name; document.body.appendChild(a); a.click(); a.remove(); }
+    catch(e){ statusEl.textContent='Export is not available in this view.'; }
+  }
+}
+$('csv').onclick=()=>saveText(`wind-days-${[...st.spots].join('-')}.csv`,buildCSV(),'text/csv',$('csvStatus'),'CSV saved.');
+
+// ---- Open-Meteo
+const setStatus=m=>{$('dataStatus').textContent=m; try{panelSums()}catch(e){}};
+const isoDay=d=>new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);
+const addDays=(s,n)=>{const d=new Date(s+'T12:00:00');d.setDate(d.getDate()+n);return isoDay(d)};
+const todayISO=()=>isoDay(new Date());
+const qs=o=>Object.entries(o).map(([k,v])=>k+'='+encodeURIComponent(v)).join('&');
+async function getJSON(url){
+  let r; try{ r=await fetch(url,{cache:'no-store'}) }catch(e){ const err=new Error('network'); err.network=true; throw err }
+  const j=await r.json().catch(()=>null);
+  if(!r.ok||!j||j.error) throw new Error((j&&j.reason)||('HTTP '+r.status));
+  return j;
+}
+const r1=v=>v==null?null:Math.round(v*10)/10;
+// hourly Open-Meteo arrays -> app days: [date, speed[12], dir[12], temp[12], gust[12], forecast flag, forecast source, cloud %[12], tide m[12]]
+function hourlyToDays(h,forecast){ // forecast: false for history, or the forecast model name
+  const by=new Map();
+  (h.time||[]).forEach((t,i)=>{const date=t.slice(0,10), hr=+t.slice(11,13);
+    let d=by.get(date); if(!d){d={sp:Array(24).fill(null),dr:Array(24).fill(null),tp:Array(24).fill(null),gu:Array(24).fill(null),cl:Array(24).fill(null)};by.set(date,d)}
+    d.sp[hr]=h.wind_speed_10m?.[i]??null; d.dr[hr]=h.wind_direction_10m?.[i]??null; d.tp[hr]=h.temperature_2m?.[i]??null; d.gu[hr]=h.wind_gusts_10m?.[i]??null; d.cl[hr]=h.cloud_cover?.[i]??null; });
+  const out=[];
+  for(const [date,d] of by){
+    const sp=[],dr=[],tp=[],gu=[],cl=[];
+    for(let s=0;s<12;s++){const a=2*s,b=a+1;
+      const vs=[d.sp[a],d.sp[b]].filter(v=>v!=null); sp.push(vs.length?r1(vs.reduce((x,y)=>x+y,0)/vs.length):null);
+      let sx=0,sy=0,n=0; [a,b].forEach(k=>{if(d.dr[k]!=null){const w=Math.max(d.sp[k]??1,0.1),ra=d.dr[k]*Math.PI/180; sx+=Math.sin(ra)*w; sy+=Math.cos(ra)*w; n++}});
+      dr.push(n?Math.round((Math.atan2(sx,sy)*180/Math.PI+360)%360):null);
+      const ts=[d.tp[a],d.tp[b]].filter(v=>v!=null); tp.push(ts.length?Math.round(ts.reduce((x,y)=>x+y,0)/ts.length):null);
+      const gs=[d.gu[a],d.gu[b]].filter(v=>v!=null); gu.push(gs.length?r1(Math.max(...gs)):null);
+      const cs=[d.cl[a],d.cl[b]].filter(v=>v!=null); cl.push(cs.length?Math.round(cs.reduce((x,y)=>x+y,0)/cs.length):null);
+    }
+    if(sp.some(v=>v!=null)) out.push([date,sp,dr,tp,gu,forecast?1:0,forecast||null,cl,null]);
+  }
+  return out;
+}
+function mergeInto(arr,newDays){
+  const m=new Map(arr.map(d=>[d[0],d])); newDays.forEach(d=>m.set(d[0],d));
+  const today=todayISO();
+  return [...m.values()].filter(d=>!(d[5]===1&&d[0]<today)).sort((a,b)=>a[0]<b[0]?-1:1);
+}
+// split a multi-model Open-Meteo response ("wind_speed_10m_gfs_seamless", …) into one hourly object per model
+function splitModels(h,models){
+  const out={}; const vars=VARS.split(',');
+  for(const m of models){ const o={time:h.time}; for(const v of vars) o[v]=h[v+'_'+m]??(models.length===1?h[v]:undefined); out[m]=o }
+  return out;
+}
+// sea level incl. tides (Open-Meteo Marine API); only meaningful at the sea
+async function fetchTides(s,from,to){
+  if(s.tides===false) return;
+  if(from<TIDE_MIN) from=TIDE_MIN; if(from>to) return;
+  let j; try{ j=await getJSON(MARINE_URL+'?'+qs({latitude:s.lat,longitude:s.lon,hourly:'sea_level_height_msl',start_date:from,end_date:to,timezone:'auto'})) }
+  catch(e){ if(e.network) throw e; s.tides=false; return }
+  const h=j.hourly||{}, by=new Map(); let any=false;
+  (h.time||[]).forEach((t,i)=>{const v=h.sea_level_height_msl?.[i]; if(v==null) return; any=true; const date=t.slice(0,10), hr=+t.slice(11,13);
+    let a=by.get(date); if(!a){a=Array(24).fill(null);by.set(date,a)} a[hr]=v});
+  if(!any){ s.tides=false; return }
+  s.tides=true;
+  for(const [date,a] of by) s.tide[date]=Array.from({length:12},(_,k)=>{const v=[a[2*k],a[2*k+1]].filter(x=>x!=null); return v.length?Math.round(v.reduce((x,y)=>x+y,0)/v.length*100)/100:null});
+}
+// build the days the rest of the app uses: one model, or the equal-weight blend of the switched-on models
+function buildDays(s){
+  const tideOf=date=>s.tide&&s.tide[date]||null;
+  s.idx={}; for(const m of META.blend){ s.idx[m]=new Map((s.m[m]||[]).map(d=>[d[0],d])) }
+  const perModel=date=>{const o={}; for(const m of META.blend){const d=s.idx[m].get(date); if(d) o[m]=d[1]} return o};
+  if(META.view!=='combined'){
+    s.days=(s.m[META.view]||[]).map(d=>[d[0],d[1],d[2],d[3],d[4],d[5],d[5]?shortName(META.view):null,d[7],tideOf(d[0]),perModel(d[0])]);
+    return;
+  }
+  const act=activeModels(), dates=new Set(); act.forEach(m=>(s.m[m]||[]).forEach(d=>dates.add(d[0])));
+  const out=[];
+  for(const date of [...dates].sort()){
+    const ds=act.map(m=>s.idx[m].get(date)).filter(Boolean); if(!ds.length) continue;
+    const avg=(k,round)=>Array.from({length:12},(_,i)=>{const v=ds.map(d=>d[k]&&d[k][i]).filter(x=>x!=null); return v.length?round(v.reduce((a,b)=>a+b,0)/v.length):null});
+    const sp=avg(1,r1), gu=avg(4,r1), tp=avg(3,Math.round), cl=avg(7,Math.round);
+    const dr=Array.from({length:12},(_,i)=>{let sx=0,sy=0,n=0; ds.forEach(d=>{const a=d[2]&&d[2][i], w=d[1]&&d[1][i]; if(a!=null){const r=a*Math.PI/180, ww=Math.max(w??1,0.1); sx+=Math.sin(r)*ww; sy+=Math.cos(r)*ww; n++}}); return n?Math.round((Math.atan2(sx,sy)*180/Math.PI+360)%360):null});
+    if(!sp.some(v=>v!=null)) continue;
+    const fc=ds.some(d=>d[5])?1:0;
+    out.push([date,sp,dr,tp,gu,fc,fc?'Combined':null,cl,tideOf(date),perModel(date),ds.length]);
+  }
+  s.days=out;
+}
+const rebuildAll=()=>{ for(const s of Object.values(SPOTS)) buildDays(s) };
+async function fetchModels(url,params,models,failed){
+  try{ const j=await getJSON(url+'?'+qs({...params,models:models.join(',')})); return {j,per:splitModels(j.hourly||{},models)} }
+  catch(e){ if(e.network||models.length===1) throw e }
+  const per={}; let j0=null;
+  for(const m of models){ try{ const j=await getJSON(url+'?'+qs({...params,models:m})); j0=j0||j; per[m]=splitModels(j.hourly||{},[m])[m] }
+    catch(e){ if(e.network) throw e; failed.add(m); per[m]={time:[]} } }
+  return {j:j0||{},per};
+}
+async function fetchSpot(key,mode,only){
+  const s=SPOTS[key], models=(only||META.blend).slice(), yday=addDays(todayISO(),-1);
+  const base={latitude:s.lat,longitude:s.lon,hourly:VARS,wind_speed_unit:'kn',timezone:'auto'};
+  // history: one request for all models
+  const lastHist=m=>{const h=(s.m[m]||[]).filter(d=>!d[5]); return h.length?h[h.length-1][0]:null};
+  let from=META.start;
+  const canUpdate=mode==='update'&&models.every(m=>lastHist(m)&&s.fetchedFrom===META.start);
+  if(canUpdate) from=addDays(models.map(lastHist).sort()[0],-3); else mode='full';
+  const earliest=models.map(m=>CAT[m]?.min||'2021-01-01').sort()[0];
+  if(from<earliest) from=earliest;
+  let histCount={}; const failed=new Set();
+  if(from<=yday){
+    const {per}=await fetchModels(HIST_URL,{...base,start_date:from,end_date:yday},models,failed);
+    for(const m of models){ const d=hourlyToDays(per[m],false); histCount[m]=d.length;
+      const keep=mode==='full'?(s.m[m]||[]).filter(x=>x[5]):(s.m[m]||[]);
+      s.m[m]=mergeInto(keep,d) }
+  }
+  // forecast: one request for all models
+  const today=todayISO(), nd=+META.fcDays||5, lastDay=addDays(today,nd-1);
+  const {j:fj,per:fper}=await fetchModels(FORECAST_URL,{...base,forecast_days:nd},models,failed);
+  if(fj.timezone) s.tz=fj.timezone;
+  for(const m of models){ if(failed.has(m)) continue; const fd=hourlyToDays(fper[m],shortName(m)).filter(d=>d[0]>=today&&d[0]<=lastDay);
+    s.m[m]=mergeInto((s.m[m]||[]).filter(d=>!d[5]),fd) }
+  await fetchTides(s,from,lastDay);
+  if(!only) s.fetchedFrom=META.start;
+  s.updated=new Date().toISOString();
+  buildDays(s);
+  return {histCount,full:mode==='full',failed:[...failed],fcTo:(s.days.filter(d=>d[5]).pop()||[])[0]};
+}
+let busy=false;
+async function runDownload(keys,mode,only){
+  if(busy) return; busy=true; ['dlAll','updAll'].forEach(id=>$(id).disabled=true);
+  let ok=0, fail=[], empty=[], badModels=new Set(), fcTo=null;
+  for(const k of keys){
+    setStatus(`${mode==='update'?'Updating':'Downloading'} ${SPOTS[k].name}${only?' ('+only.map(shortName).join(', ')+')':''} (${ok+fail.length+1} of ${keys.length})…`);
+    try{ const res=await fetchSpot(k,mode,only); ok++; res.failed.forEach(m=>badModels.add(m)); if(res.fcTo&&(!fcTo||res.fcTo>fcTo)) fcTo=res.fcTo;
+      if(res.full) for(const [m,n] of Object.entries(res.histCount)) if(!n) empty.push(`${shortName(m)} at ${SPOTS[k].name}`);
+      await saveStore(); renderData(); }
+    catch(e){ fail.push([k,e]); }
+  }
+  busy=false; ['dlAll','updAll'].forEach(id=>$(id).disabled=false);
+  afterDataChange();
+  const note=(fcTo?` Forecast to ${fmtDate(fcTo)}.`:'')+(badModels.size?` Open-Meteo refused ${[...badModels].map(shortName).join(', ')}; the blend uses the other models.`:'')+(empty.length?` No history returned for ${empty.join(', ')} (outside the model's area or archive); the blend uses the other models there.`:'');
+  if(!fail.length) setStatus(`Done: ${ok} spot${ok>1?'s':''} ${mode==='update'?'updated':'downloaded'} at ${new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}.${note}`);
+  else if(fail.some(([,e])=>e.network)) setStatus(`Couldn't reach Open-Meteo${ok?` for ${fail.length} spot${fail.length>1?'s':''}`:''}. Check your connection. If you're viewing this on claude.ai, download the HTML file and open it in your browser: published pages can't connect to other sites.`);
+  else setStatus(`Open-Meteo returned an error for ${fail.map(([k])=>SPOTS[k].name).join(', ')}: ${fail[0][1].message}`);
+}
+function renderData(){
+  const rows=Object.entries(SPOTS).map(([k,s])=>{
+    const cov=META.blend.map(m=>{const h=(s.m[m]||[]).filter(d=>!d[5]), f=(s.m[m]||[]).filter(d=>d[5]);
+      return `<span class="mcov ${META.off.includes(m)?'off':''}" title="${shortName(m)}: ${h.length?`history ${fmtDate(h[0][0])} – ${fmtDate(h[h.length-1][0])} (${h.length} days)`:'no history'}; ${f.length?`forecast to ${fmtDate(f[f.length-1][0])}`:'no forecast'}"><i style="background:${modelColor(m)}"></i>${shortName(m)} <span class="miss">${h.length?'from '+fmtDate(h[0][0]).replace(/ \d{4}$/,m=>m):'–'}${f.length?' · fc ✓':''}</span></span>`}).join('');
+    const h=s.days.filter(d=>!d[5]), f=s.days.filter(d=>d[5]);
+    return `<tr><td><b>${s.name}</b><br><span class="miss" style="font-size:12px">${s.lat.toFixed(2)}, ${s.lon.toFixed(2)}</span></td>
+      <td><div class="mcovs">${cov}</div></td>
+      <td>${h.length?`${fmtDate(h[0][0])} – ${fmtDate(h[h.length-1][0])} <span class="miss">(${h.length} days)</span>`:'<span class="miss">no data yet</span>'}</td>
+      <td>${f.length?`to ${fmtDate(f[f.length-1][0])}`:'<span class="miss">–</span>'}</td>
+      <td class="miss">${s.updated?new Date(s.updated).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'–'}</td>
+      <td><button class="btn ghost" data-dl="${k}" style="padding:3px 10px">${Object.keys(s.m).length?'Update':'Download'}</button>
+      <button class="x" data-rm="${k}" aria-label="Remove ${s.name}">×</button></td></tr>`}).join('');
+  $('dataTbl').innerHTML=`<tr><th>Spot</th><th>Models downloaded</th><th>History (${META.view==='combined'?'combined':shortName(META.view)})</th><th>Forecast</th><th>Updated</th><th></th></tr>`+(rows||`<tr><td colspan="6" class="miss">No spots. Add one below.</td></tr>`);
+  $('dataTbl').querySelectorAll('[data-dl]').forEach(b=>b.onclick=()=>runDownload([b.dataset.dl],Object.keys(SPOTS[b.dataset.dl].m).length?'update':'full'));
+  $('dataTbl').querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{const k=b.dataset.rm; if(!confirm(`Remove ${SPOTS[k].name} and its downloaded data?`)) return;
+    delete SPOTS[k]; delete st.dirs[k]; st.spots.delete(k); if(!st.spots.size) Object.keys(SPOTS).forEach(x=>st.spots.add(x)); saveStore(); renderData(); afterDataChange();});
+}
+function renderBlend(){
+  const a=activeModels();
+  $('blend').innerHTML=META.blend.map(m=>{const on=!META.off.includes(m);
+    return `<span class="bchip ${on?'on':''}"><button class="chip" data-bm="${m}" aria-pressed="${on}" title="${CAT[m].prov} · ${CAT[m].res} · archive from ${fmtDate(CAT[m].min)}"><i style="background:${modelColor(m)}"></i>${shortName(m)} <b>${on&&a.length?Math.round(100/a.length)+'%':'off'}</b></button>${DEFAULT_BLEND.includes(m)?'':`<button class="x" data-rmm="${m}" aria-label="Remove ${shortName(m)} from the blend">×</button>`}</span>`}).join('');
+  $('blend').querySelectorAll('[data-bm]').forEach(b=>b.onclick=()=>{const m=b.dataset.bm;
+    META.off.includes(m)?META.off=META.off.filter(x=>x!==m):META.off.push(m);
+    if(!activeModels().length){ META.off=META.off.filter(x=>x!==m); setStatus('At least one model has to stay switched on.') }
+    saveStore(); renderBlend(); rebuildAll(); afterDataChange()});
+  $('blend').querySelectorAll('[data-rmm]').forEach(b=>b.onclick=()=>{const m=b.dataset.rmm; META.blend=META.blend.filter(x=>x!==m); META.off=META.off.filter(x=>x!==m);
+    if(META.view===m) META.view='combined'; for(const s of Object.values(SPOTS)) delete s.m[m]; saveStore(); renderBlend(); rebuildAll(); afterDataChange()});
+  // add-model list
+  const groups={}; CAT_ROWS.forEach(r=>{ if(META.blend.includes(r[1])) return; (groups[r[0]]=groups[r[0]]||[]).push(CAT[r[1]]) });
+  $('addModel').innerHTML='<option value="">Choose a model…</option>'+Object.entries(groups).map(([g,ms])=>`<optgroup label="${g}">${ms.map(m=>`<option value="${m.id}">${m.name} (${m.res}, ${m.area}) · from ${m.min.slice(0,7)}</option>`).join('')}</optgroup>`).join('');
+  // view select
+  $('view').innerHTML=`<option value="combined">Combined (weighted average)</option>`+META.blend.map(m=>`<option value="${m}">${shortName(m)} only${META.off.includes(m)?' (off in blend)':''}</option>`).join('');
+  $('view').value=META.view;
+  $('viewHint').textContent=META.view==='combined'?`Average of ${a.map(shortName).join(', ')}, each ${Math.round(100/Math.max(1,a.length))}%. If a model has no data for a time, the others share its weight.`:`Only ${shortName(META.view)} is used for rideable days, charts and export.`;
+}
+function afterDataChange(){
+  for(const k in SPOTS){ if(!st.dirs[k]) st.dirs[k]=new Set(SECT) }
+  refreshYears(); spotChips(); yearChips(); dirChips(); renderData(); update();
+  const any=Object.values(SPOTS).some(s=>s.days.length);
+  $('sub').textContent=any?`Wind from Open-Meteo (${viewLabel().replace(' · ',': ')}) for ${Object.values(SPOTS).map(s=>s.name).join(', ')}. Set your weight and quiver, and see which days each spot was, or will be, rideable.`:'No wind data yet. Press "Download all spots" in the Wind data panel to fetch history and forecast from Open-Meteo.';
+}
+// add spot via Open-Meteo geocoding
+async function searchSpot(){
+  const q=$('addName').value.trim(); if(q.length<2) return;
+  $('addResults').innerHTML='<span class="status">Searching…</span>';
+  try{
+    const j=await getJSON('https://geocoding-api.open-meteo.com/v1/search?'+qs({name:q,count:6,language:'en',format:'json'}));
+    const res=j.results||[];
+    if(!res.length){$('addResults').innerHTML='<span class="status">Nothing found. Try a nearby town.</span>';return}
+    $('addResults').innerHTML=res.map((r,i)=>`<button class="chip" data-i="${i}">${r.name}${r.admin1?', '+r.admin1:''}${r.country_code?' ('+r.country_code+')':''}</button>`).join('');
+    $('addResults').querySelectorAll('button').forEach(b=>b.onclick=()=>{const r=res[+b.dataset.i];
+      let key=(r.name||'spot').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'')||'spot'; while(SPOTS[key]) key+='x';
+      SPOTS[key]={name:r.name,lat:+r.latitude,lon:+r.longitude,m:{},tide:{},days:[],updated:null};
+      st.spots.add(key); st.dirs[key]=new Set(SECT); saveStore();
+      $('addResults').innerHTML=''; $('addName').value='';
+      afterDataChange(); runDownload([key],'full');});
+  }catch(e){ $('addResults').innerHTML=`<span class="status">${e.network?"Couldn't reach Open-Meteo. Open the downloaded HTML file in your browser to search.":'Search failed: '+e.message}</span>` }
+}
+$('addSearch').onclick=searchSpot;
+// coordinates: "49.89, 18.17", "49,89 18,17", "43.2504011N, 16.6349519E", "N 43.25° E 16.63", "43°15'01.4\"N 16°38'05.8\"E"
+function parseCoord(str,axis){ // axis 'lat' or 'lon'; returns number or NaN
+  if(str==null) return NaN; let s=String(str).trim().toUpperCase().replace(/\s+/g,' ');
+  const hem=(s.match(/[NSEW]/)||[''])[0]; s=s.replace(/[NSEW]/g,'').trim();
+  let v;
+  const dms=s.match(/^(-?\d+(?:[.,]\d+)?)\s*[°º ]\s*(?:(\d+(?:[.,]\d+)?)\s*['′ ]?\s*(?:(\d+(?:[.,]\d+)?)\s*(?:["″]|'')?)?)?$/);
+  if(dms&&(dms[2]!=null||/[°º]/.test(s))){ const d=parseFloat(dms[1].replace(',','.')), m=parseFloat((dms[2]||'0').replace(',','.')), sec=parseFloat((dms[3]||'0').replace(',','.')); v=Math.sign(d||1)*(Math.abs(d)+m/60+sec/3600) }
+  else v=parseFloat(s.replace(/[°º]/g,'').replace(',','.'));
+  if(isNaN(v)) return NaN;
+  if(hem==='S'||hem==='W') v=-Math.abs(v);
+  if(axis==='lat'&&(hem==='E'||hem==='W')) return NaN;
+  if(axis==='lon'&&(hem==='N'||hem==='S')) return NaN;
+  return v;
+}
+function parsePair(str){ // returns [lat,lon] or null
+  const s=String(str||'').trim(); if(!s) return null;
+  let a,b;
+  if(/[NSEW]/i.test(s)){
+    const num=String.raw`-?\d+(?:[.,]\d+)?(?:\s*[°º]\s*(?:\d+(?:[.,]\d+)?\s*['′]?\s*(?:\d+(?:[.,]\d+)?\s*(?:["″]|'')?)?)?)?`;
+    const re=/^\s*[NSEW]/i.test(s)?new RegExp(`[NSEW]\\s*${num}`,'gi'):new RegExp(`${num}\\s*[NSEW]`,'gi');
+    const parts=s.match(re); if(!parts||parts.length!==2) return null; [a,b]=parts;
+    if(/[EW]/i.test(a)&&/[NS]/i.test(b)) [a,b]=[b,a];
+  } else { const m=s.match(/^\s*(-?\d+(?:\.\d+)?)\s*(?:,\s*|;\s*|\s+)\s*(-?\d+(?:\.\d+)?)\s*$/)||s.match(/^\s*(-?\d+(?:,\d+)?)\s*(?:;\s*|\s+)\s*(-?\d+(?:,\d+)?)\s*$/); if(!m) return null; a=m[1]; b=m[2] }
+  const lat=parseCoord(a,'lat'), lon=parseCoord(b,'lon'); if(isNaN(lat)||isNaN(lon)) return null;
+  return (lat>=-90&&lat<=90&&lon>=-180&&lon<=180)?[lat,lon]:null;
+}
+$('cLat').addEventListener('input',e=>{const p=parsePair(e.target.value); if(p&&/[\s,;NSEW]/i.test(e.target.value.trim().replace(/^-/,''))&&!/^\s*-?\d+(?:[.,]\d+)?\s*[NS]?\s*$/i.test(e.target.value)){ $('cLat').value=String(+p[0].toFixed(6)); $('cLon').value=String(+p[1].toFixed(6)) }});
+$('cAdd').onclick=()=>{
+  const pair=parsePair($('cLat').value); let lat, lon;
+  if(pair&&!$('cLon').value.trim()) [lat,lon]=pair; else { lat=parseCoord($('cLat').value,'lat'); lon=parseCoord($('cLon').value,'lon') }
+  if(!(lat>=-90&&lat<=90)||!(lon>=-180&&lon<=180)){ setStatus('Enter a latitude between -90 and 90 and a longitude between -180 and 180.'); return }
+  const name=$('cName').value.trim()||`${lat.toFixed(3)}, ${lon.toFixed(3)}`;
+  let key=name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'')||'spot'; while(SPOTS[key]) key+='x';
+  SPOTS[key]={name,lat:Math.round(lat*1e4)/1e4,lon:Math.round(lon*1e4)/1e4,m:{},tide:{},days:[],updated:null,tides:$('cTide').checked?undefined:false};
+  st.spots.add(key); st.dirs[key]=new Set(SECT); saveStore();
+  ['cName','cLat','cLon'].forEach(id=>$(id).value=''); $('cTide').checked=false;
+  afterDataChange(); runDownload([key],'full');
+};
+$('addName').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();searchSpot()}});
+loadStoreFix(); $('start').value=META.start; $('startAuto').checked=META.startAuto; $('start').max=todayISO(); if(!META.fcDays) META.fcDays=5; $('fcDays').value=META.fcDays;
+$('fcDays').onchange=e=>{META.fcDays=+e.target.value; saveStore(); const ks=Object.keys(SPOTS).filter(k=>Object.keys(SPOTS[k].m).length); if(ks.length) runDownload(ks,'update')};
+$('view').onchange=e=>{META.view=e.target.value; saveStore(); renderBlend(); rebuildAll(); afterDataChange()};
+$('addModel').onchange=e=>{const m=e.target.value; if(!m) return; META.blend.push(m); saveStore(); renderBlend(); rebuildAll(); afterDataChange();
+  const ks=Object.keys(SPOTS); if(ks.length) runDownload(ks,'full',[m])};
+$('startAuto').onchange=e=>{META.startAuto=e.target.checked; if(META.startAuto){META.start=autoStart(); $('start').value=META.start; saveStore(); setStatus('History starts on '+fmtDate(META.start)+'. Press "Download all spots" to fetch that range.')} else saveStore()};
+$('start').onchange=e=>{const v=e.target.value; if(v){META.start=v; META.startAuto=false; $('startAuto').checked=false; saveStore();
+  setStatus('Start date changed. Press "Download all spots" to fetch the new range for all models.')}};
+$('dlAll').onclick=()=>runDownload(Object.keys(SPOTS),'full');
+$('updAll').onclick=()=>runDownload(Object.keys(SPOTS).filter(k=>SPOTS[k].days.length).length?Object.keys(SPOTS):Object.keys(SPOTS),'update');
+$('expData').onclick=()=>saveText(`lake-wind-data-${todayISO()}.json`,JSON.stringify({app:'lake-wind-days',version:3,meta:META,spots:Object.fromEntries(Object.entries(SPOTS).map(([k,s])=>{const {days,idx,...rest}=s; return [k,rest]}))}),'application/json',$('dataStatus'),'Data exported.');
+$('impBtn').onclick=()=>$('impFile').click();
+$('impFile').onchange=async e=>{const f=e.target.files[0]; if(!f) return;
+  try{ const j=JSON.parse(await f.text()); if(!j.spots||typeof j.spots!=='object') throw new Error('not a Lake wind days data file');
+    for(const [k,s] of Object.entries(j.spots)){ if(typeof s.lat!=='number'||typeof s.lon!=='number') throw new Error('spot '+k+' is incomplete'); if(!s.m||typeof s.m!=='object') throw new Error('this file is from an older version of the app (no per-model data); download the spots again instead') }
+    SPOTS=j.spots; for(const s of Object.values(SPOTS)){ s.tide=s.tide||{}; s.days=[] } Object.assign(META,j.meta||{}); loadStoreFix(); $('start').value=META.start; $('startAuto').checked=META.startAuto; $('fcDays').value=META.fcDays||5; renderBlend(); rebuildAll();
+    st.spots=new Set(Object.keys(SPOTS)); saveStore(); afterDataChange(); setStatus(`Imported ${Object.keys(SPOTS).length} spots from ${f.name}.`);
+  }catch(err){ setStatus('Import failed: '+err.message) }
+  e.target.value='';
+};
+
+// init
+MONTHS.forEach((m,i)=>{[$('mFrom'),$('mTo')].forEach(s=>{const o=document.createElement('option');o.value=i;o.textContent=m;s.appendChild(o)})});
+$('mFrom').value=st.mFrom; $('mTo').value=st.mTo;
+$('mFrom').onchange=e=>{st.mFrom=+e.target.value;update()};
+$('mTo').onchange=e=>{st.mTo=+e.target.value;update()};
+$('weight').oninput=e=>{st.weight=+e.target.value;$('wOut').value=st.weight;renderGear();update()};
+$('skill').onchange=e=>{st.skill=e.target.value;renderGear();update()};
+$('suit').onchange=e=>{st.suit=+e.target.value;renderGear();update()};
+$('lowMode').onchange=e=>{st.lowMode=e.target.value;renderGear();update()};
+$('dur').onchange=e=>{st.dur=+e.target.value;update()};
+HOURS.forEach(h=>{[$('hFrom'),$('hTo')].forEach(s=>{const o=document.createElement('option');o.value=h;o.textContent=String(h).padStart(2,'0')+'h';s.appendChild(o)})});
+$('hFrom').value=st.hFrom; $('hTo').value=st.hTo;
+const setHours=()=>{let a=+$('hFrom').value,b=+$('hTo').value; if(a>b){[a,b]=[b,a];$('hFrom').value=a;$('hTo').value=b} st.hFrom=a;st.hTo=b;update()};
+$('hFrom').onchange=setHours; $('hTo').onchange=setHours;
+$('tbl').addEventListener('click',e=>{const b=e.target.closest('[data-x]'); if(!b) return; const k=b.dataset.x;
+  if(st.expandAll){ st.expandAll=false; st.expanded=new Set(results.map(x=>x.spot+'|'+x.d[0])); }
+  st.expanded.has(k)?st.expanded.delete(k):st.expanded.add(k); renderDays();
+  const nb=document.querySelector(`[data-x="${CSS.escape(k)}"]`); nb&&nb.focus();});
+$('expAll').onclick=()=>{st.expandAll=true;renderDays()};
+$('colAll').onclick=()=>{st.expandAll=false;st.expanded.clear();renderDays()};
+function layerChips(){chips($('layers'),[['models','Each model'],['gust','Gusts'],['temp','Temperature'],['cloud','Clouds'],['tide','Tides']],v=>st.layers.has(v),v=>{st.layers.has(v)?st.layers.delete(v):st.layers.add(v);layerChips();renderDays()})}
+function setUnit(u){ if(u!=='kt'&&u!=='ms') return; st.unit=u; unitChips(); renderGear(); renderDays(); renderCoverage(); renderNext(); renderSummary(); panelSums() }
+function unitChips(){
+  chips($('units'),[['kt','kt'],['ms','m/s']],u=>st.unit===u,setUnit);
+  const hu=$('hdrUnit'); if(hu){ hu.innerHTML=[['kt','kt'],['ms','m/s']].map(([v,l])=>`<button type="button" data-hu="${v}" aria-pressed="${st.unit===v}">${l}</button>`).join('');
+    hu.querySelectorAll('[data-hu]').forEach(b=>b.onclick=()=>setUnit(b.dataset.hu)) }
+}
+$('minT').oninput=e=>{const v=+e.target.value;st.minT=v<=-10?null:v;$('minTOut').value=st.minT==null?'Any':st.minT;$('minTUnit').textContent=st.minT==null?'':'°C';update()};
+$('showAll').onchange=e=>{st.showAll=e.target.checked;st.limit=150;renderDays()};
+$('more').onclick=()=>{st.limit+=300;renderDays()};
+initFolds(); { let tb='next'; try{tb=localStorage.getItem(TAB_KEY)||'next'}catch(e){} showTab(['next','season','quiver','spots'].includes(tb)?tb:'next') }
+loadGear(); $('weight').value=st.weight; $('wOut').value=st.weight; $('skill').value=st.skill; $('suit').value=String(st.suit); $('lowMode').value=st.lowMode;
+unitChips(); layerChips(); renderPrio(); renderGear(); renderBlend(); afterDataChange();
+(async()=>{ await loadBulk(); rebuildAll(); afterDataChange();
+if(!Object.values(SPOTS).some(s=>Object.keys(s.m).length)){ $('p-data').open=true; showTab('spots'); } if(!Object.values(SPOTS).some(s=>Object.keys(s.m).length)) setStatus('No data yet. Press "Download all spots" to fetch GFS, ICON, IFS and UKMO Global history and forecasts from Open-Meteo.');
+else runDownload(Object.keys(SPOTS),'update'); })();
+</script>
+</body>
+</html>
