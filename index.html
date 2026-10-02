@@ -283,7 +283,7 @@ a{color:var(--sock)}
   <section class="tab" id="tab-next" aria-label="Next days">
     <div class="hero"><div class="hbig" id="nextBig"></div><div class="small" id="nextSmall"></div></div>
     <p class="snote" id="seasonNote" hidden></p>
-    <div class="qchips" id="qchips" role="group" aria-label="Your quiver: switch gear on or off"></div>
+    <div class="qchips" id="qchips" role="group" aria-label="Your gear: switch it on or off"></div>
     <div class="dcards" id="dcards"></div>
     <p class="hint" style="margin-top:12px">Ride: at least one gear works for the chosen number of hours. Maybe: a gear works, but for less time. Squares show how many models agree with the verdict. Filters for hours, temperature and direction are under Spots.</p>
   </section>
@@ -317,7 +317,7 @@ a{color:var(--sock)}
   <p class="foot">Data: Open-Meteo (hourly, averaged into 2-hour steps; gusts are the 2-hour maximum). These are modelled winds, not station readings, so real gusts and lulls on the lakes can differ. A day matches when, for at least one gear in use, the wind stays inside that gear's range, from a selected direction and at or above the minimal temperature, for the chosen number of consecutive hours inside the chosen time of day. Underlined cells are the ones that count. Gear ranges are rough estimates scaled from rider weight and size; adjust them to match your own experience.</p>
   </section>
 
-  <section class="tab" id="tab-quiver" aria-label="Quiver" hidden>
+  <section class="tab" id="tab-quiver" aria-label="Gear" hidden>
     <details class="panel fold" id="p-gear" data-sec="gear">
     <summary><h2 id="h-gear">Rider and gear</h2><span class="psum" id="s-gear"></span></summary>
     <div class="riderRow">
@@ -358,7 +358,7 @@ a{color:var(--sock)}
     </div>
     <div class="row" style="margin-top:8px;gap:14px">
       <button class="btn ghost" id="addGear">Add gear</button>
-      <button class="btn ghost" id="resetGear" title="Back to the default quiver">Reset to default gear</button>
+      <button class="btn ghost" id="resetGear" title="Back to the default gear list">Reset to default gear</button>
       <details class="how"><summary>How ranges are calculated</summary>
         <p>Total mass M = rider + gear (+ wetsuit). Foil take-off board speed v<sub>to</sub> = 27.2 × √(M / (C<sub>L</sub> × foil cm²)). Lowest wind to get foiling = C<sub>rig</sub> × C<sub>board</sub> × C<sub>skill</sub> × √(M / rig m²) × (v<sub>to</sub> / 8)<sup>0.75</sup> × η. Fin skips the foil term. C<sub>rig</sub>: windfoil 2.1, wingfoil 3.1, sail on fin 3.3. C<sub>board</sub> = (board litres ÷ rider kg ÷ 1.4)<sup>−0.15</sup>. C<sub>skill</sub>: beginner 1.15, intermediate 1.0, advanced 0.85 on foil and 0.9 on fin.</p>
         <p>Front wing shape sets C<sub>L</sub>, η and the stay-up ratio: low aspect 1.0 / 1.05 / 0.80, mid 0.9 / 1.00 / 0.75, high 0.8 / 0.96 / 0.70, race 0.7 / 0.93 / 0.65.</p>
@@ -498,12 +498,12 @@ a{color:var(--sock)}
 <nav class="tabbar" aria-label="Sections"><div class="in">
   <button type="button" data-tab="next"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 12h13a3 3 0 1 0-3-3"></path><path d="M3 17h8a2.5 2.5 0 1 1-2.5 2.5"></path></svg>Next days</button>
   <button type="button" data-tab="season"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"></rect><path d="M3 9h18M8 2v4M16 2v4"></path></svg>Season</button>
-  <button type="button" data-tab="quiver"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 21 L12 3 L18 21 Z"></path><path d="M12 3v18"></path></svg>Quiver</button>
+  <button type="button" data-tab="quiver"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M11 2.5v14"></path><path d="M11 2.5c5 3.5 7 8.5 6 14h-6z"></path><path d="M2.5 19.5c6.5 1.6 12.5 1.4 19-.8"></path><path d="M6 20.3l1 2.4 1.6-2.2"></path></svg>Gear</button>
   <button type="button" data-tab="spots"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 21s-7-6.5-7-12a7 7 0 0 1 14 0c0 5.5-7 12-7 12z"></path><circle cx="12" cy="9" r="2.5"></circle></svg>Spots</button>
 </div></nav>
 
 <script>
-const APP_VERSION='3.6'; // app-<major>-<minor>; see the lake-wind-days-builds skill
+const APP_VERSION='3.7'; // app-<major>-<minor>; see the lake-wind-days-builds skill
 // ---- data store (Open-Meteo, cached in this browser)
 const DEFAULT_SPOTS={hlucin:{name:'Hlučín',lat:49.89,lon:18.17,tides:false},novemlyny:{name:'Nové Mlýny',lat:48.88,lon:16.68,tides:false},olesna:{name:'Olešná',lat:49.65,lon:18.30,tides:false}};
 // One catalogue for history (Historical Forecast API) and forecast (Forecast API).
@@ -1316,7 +1316,7 @@ function afterDataChange(){
   for(const k in SPOTS){ if(!st.dirs[k]) st.dirs[k]=new Set(SECT) }
   refreshYears(); spotChips(); yearChips(); dirChips(); renderData(); update();
   const any=Object.values(SPOTS).some(s=>s.days.length);
-  $('sub').textContent=any?`Wind from Open-Meteo (${viewLabel().replace(' · ',': ')}) for ${Object.values(SPOTS).map(s=>s.name).join(', ')}. Set your weight and quiver, and see which days each spot was, or will be, rideable.`:'No wind data yet. Press "Download all spots" in the Wind data panel to fetch history and forecast from Open-Meteo.';
+  $('sub').textContent=any?`Wind from Open-Meteo (${viewLabel().replace(' · ',': ')}) for ${Object.values(SPOTS).map(s=>s.name).join(', ')}. Set your weight and gear, and see which days each spot was, or will be, rideable.`:'No wind data yet. Press "Download all spots" in the Wind data panel to fetch history and forecast from Open-Meteo.';
 }
 // add spot via Open-Meteo geocoding
 async function searchSpot(){
