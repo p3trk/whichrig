@@ -503,7 +503,7 @@ a{color:var(--sock)}
 </div></nav>
 
 <script>
-const APP_VERSION='3.9'; // app-<major>-<minor>; see the lake-wind-days-builds skill
+const APP_VERSION='3.10'; // app-<major>-<minor>; see the lake-wind-days-builds skill
 // ---- data store (Open-Meteo, cached in this browser)
 const DEFAULT_SPOTS={hlucin:{name:'Hlučín',lat:49.89,lon:18.17,tides:false},novemlyny:{name:'Nové Mlýny',lat:48.88,lon:16.68,tides:false},olesna:{name:'Olešná',lat:49.65,lon:18.30,tides:false}};
 // One catalogue for history (Historical Forecast API) and forecast (Forecast API).
@@ -696,8 +696,8 @@ const gearLabel=g=>{const dup=TYPES[g.type].foil&&st.gear.some(x=>x!==g&&x.type=
 const SHORT={windfoil:'foil',wingfoil:'wing',fin:'fin'};
 const GI_SW='stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"';
 const GI={ // small gear icons (inherit the text colour)
-  fin:`<path d="M7.5 1.5v10"/><path d="M7.5 1.5Q13 4.7 12.5 10.5H7.5Z" fill="currentColor" fill-opacity=".35"/><path d="M1.8 12.5Q8 13.5 14.2 12"/><path d="M4 12.9 4.6 15.1 6 13.1" fill="currentColor"/>`,
-  windfoil:`<path d="M7.5 1v8.6"/><path d="M7.5 1Q13 4.2 12.5 8.6H7.5Z" fill="currentColor" fill-opacity=".35"/><path d="M1.8 10.1Q8 11.1 14.2 9.6"/><path d="M5.6 10.7v2.9M2.6 13.7h7.8" stroke-width="1.2"/><path d="M6.8 13.7Q9.2 12.5 11.6 13.7Q9.2 14.6 6.8 13.7Z" fill="currentColor" stroke-width="1"/><path d="M1.2 13.7Q2.2 13.1 3.4 13.7Q2.2 14.1 1.2 13.7Z" fill="currentColor" stroke-width="1"/>`,
+  fin:`<path d="M5.8 1.4Q0.2 4.6 2 12.1L6.4 12.7Z" fill="currentColor" fill-opacity=".35"/><path d="M6.4 12.7 5.8 1.4"/><path d="M1.8 12.5Q8 13.5 14.2 12"/><path d="M3.8 12.9 4.3 15.2 5.6 13.1" fill="currentColor"/>`,
+  windfoil:`<path d="M5.6 .9Q0 4 1.9 9.9L6.2 10.4Z" fill="currentColor" fill-opacity=".35"/><path d="M6.2 10.4 5.6 .9"/><path d="M1.8 10.1Q8 11.1 14.2 9.6"/><path d="M5.6 10.7v2.9M2.6 13.7h7.8" stroke-width="1.2"/><path d="M6.8 13.7Q9.2 12.5 11.6 13.7Q9.2 14.6 6.8 13.7Z" fill="currentColor" stroke-width="1"/><path d="M1.2 13.7Q2.2 13.1 3.4 13.7Q2.2 14.1 1.2 13.7Z" fill="currentColor" stroke-width="1"/>`,
   wingfoil:`<path d="M1.5 6.8Q8 -1.2 14.5 6.8Q8 3.4 1.5 6.8Z" fill="currentColor" fill-opacity=".3" stroke-width="1"/><path d="M1.5 6.8Q8 -1.2 14.5 6.8" stroke-width="1.7"/><path d="M8 2.8v2.3" stroke-width="1.2"/><path d="M1.8 10.3Q8 11.3 14.2 9.8"/><path d="M5.6 10.9v2.9M2.6 13.9h7.8" stroke-width="1.2"/><path d="M6.8 13.9Q9.2 12.7 11.6 13.9Q9.2 14.8 6.8 13.9Z" fill="currentColor" stroke-width="1"/><path d="M1.2 13.9Q2.2 13.3 3.4 13.9Q2.2 14.3 1.2 13.9Z" fill="currentColor" stroke-width="1"/>`,
 };
 const gearIcon=t=>`<svg class="gi" viewBox="0 0 16 16" ${GI_SW} role="img" aria-label="${TYPES[t].name}"><title>${TYPES[t].name}</title>${GI[t]}</svg>`;
