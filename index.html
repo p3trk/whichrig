@@ -98,6 +98,10 @@ tr.miss td{opacity:.35}
 .days tr + tr td{border-top:1px solid color-mix(in srgb,var(--line) 55%,transparent)}
 .xbtn{border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:6px;font:600 11px/1 Barlow,sans-serif;padding:3px 6px;margin-top:4px;cursor:pointer;display:inline-block}
 .xbtn:hover,.xbtn[aria-expanded=true]{color:var(--sock);border-color:var(--sock)}
+.xbtn.gx{display:flex;align-items:center;gap:4px;padding:3px 4px;text-align:left;max-width:200px}
+.xbtn.gx .car{font-size:11px;flex:none}
+.pills.gx{margin-top:4px;max-width:200px}
+.pill.none{background:transparent;color:var(--muted);border:1px dashed var(--line)}
 .days th:first-child,.days td.d,.days tr.sub td.lab{position:sticky;left:0;z-index:2;background:var(--panel)}
 .days tr.focus td.d{background:color-mix(in srgb,var(--sock) 9%,var(--panel))}
 @media (max-width:560px){.days td.d{max-width:128px;white-space:normal}.days td.d .fc,.days td.d .srctag{display:block;margin:3px 0 0;width:auto;max-width:118px;white-space:normal;line-height:1.25}}
@@ -113,6 +117,7 @@ tr.miss td{opacity:.35}
 .cloudbar span{position:relative}
 .empty{padding:40px 20px;text-align:center;color:var(--muted)}
 .more{display:block;margin:14px auto 0}
+.more[hidden]{display:none}
 .foot{color:var(--muted);font-size:13px;margin-top:18px;max-width:78ch}
 .riderRow{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px 24px;margin-bottom:16px;align-items:start}
 .gearTbl th{vertical-align:bottom;line-height:1.2}
@@ -494,7 +499,7 @@ a{color:var(--sock)}
 </div></nav>
 
 <script>
-const APP_VERSION='3.2'; // app-<major>-<minor>; see the lake-wind-days-builds skill
+const APP_VERSION='3.3'; // app-<major>-<minor>; see the lake-wind-days-builds skill
 // ---- data store (Open-Meteo, cached in this browser)
 const DEFAULT_SPOTS={hlucin:{name:'Hlučín',lat:49.89,lon:18.17,tides:false},novemlyny:{name:'Nové Mlýny',lat:48.88,lon:16.68,tides:false},olesna:{name:'Olešná',lat:49.65,lon:18.30,tides:false}};
 // One catalogue for history (Historical Forecast API) and forecast (Forecast API).
@@ -798,16 +803,16 @@ function renderDays(){
   const L=st.layers, win=i=>HOURS[i]>=st.hFrom&&HOURS[i]<=st.hTo;
   const vis=HOURS.map((h,i)=>st.allDay||win(i)), nVis=vis.filter(Boolean).length, V=a=>a.filter((_,i)=>vis[i]);
   const tcol=v=>v==null?'transparent':v>=25?'#F6B48F':v>=18?'#FAD7A8':v>=10?'#F3EBC8':v>=0?'#D6E8F3':'#B7D2EE';
-  const subRow=(cls,lab,cells)=>`<tr class="sub ${cls}"><td class="lab">${lab}</td>${V(cells).join('')}<td colspan="3"></td></tr>`;
-  const head=`<tr><th>Day</th>${V(HOURS).map(h=>`<th>${String(h).padStart(2,'0')}</th>`).join('')}<th>Gear that works</th><th>Max ${UL()}</th><th>Air °C</th></tr>`;
-  if(!shown.length){$('tbl').innerHTML=head+`<tr><td colspan="${nVis+4}" class="empty">No rideable days with these settings. Add larger gear, lower the minimal temperature, widen the time of day, or shorten the duration.</td></tr>`;$('more').hidden=true;return}
+  const subRow=(cls,lab,cells)=>`<tr class="sub ${cls}"><td class="lab">${lab}</td>${V(cells).join('')}</tr>`;
+  const head=`<tr><th>Day</th>${V(HOURS).map(h=>`<th>${String(h).padStart(2,'0')}</th>`).join('')}</tr>`;
+  if(!shown.length){$('tbl').innerHTML=head+`<tr><td colspan="${nVis+1}" class="empty">No rideable days with these settings. Add larger gear, lower the minimal temperature, widen the time of day, or shorten the duration.</td></tr>`;$('more').hidden=true;return}
   $('tbl').innerHTML=head+shown.slice(0,st.limit).map(({spot,d,r})=>{
     const [date,sp,dr,tp,gu,fc]=d;
     const xk=spot+'|'+date, open=st.expandAll||st.expanded.has(xk), hasL=[...L].some(k=>k==='tide'?d[8]:k==='models'?d[9]:true);
     const offS=!inSeason(date);
-    return `<tr class="${r.match?'':'miss'} ${date===st.focusDate&&spot===st.focusSpot?'focus':''} ${offS?'offs':''}" id="row-${spot}-${date}"><td class="d">${fmtDate(date)}${offS?'<em class="offtag">off-season</em>':''}${fc?`<span class="fc" title="Forecast: ${viewLabel()}">forecast · ${d[6]||''}</span>`:`<span class="srctag" title="${viewLabel()}">${META.view==='combined'?'combined'+(d[10]&&d[10]<activeModels().length?` ${d[10]}/${activeModels().length}`:''):shortName(META.view)}</span>`}<small>${wd(date)}${multi?' · '+SPOTS[spot].name:''}</small>${hasL?`<button class="xbtn" data-x="${xk}" aria-expanded="${open}" aria-label="${open?'Hide':'Show'} details for ${fmtDate(date)}">${open?'▾ less':'▸ more'}</button>`:''}</td>${sp.map((v,i)=>`<td><div class="cell ${r.inWin[i]?'':'out'} ${r.hit.has(i)?'hit':''}" style="background:${color(v)};color:${colorFg(v)}" title="${String(HOURS[i]).padStart(2,'0')}h: ${fmtW(v)} ${UL()}${dr[i]!=null?' from '+sector(dr[i])+' ('+dr[i]+'°)':''}${gu&&gu[i]!=null?', gusts '+fmtW(gu[i])+' '+UL():''}${tp[i]!=null?', '+tp[i]+' °C':''}">${fmtW(v)}${dr[i]!=null&&v!=null?arrow(dr[i]):''}</div></td>`).filter((_,i)=>vis[i]).join('')}<td class="g">${r.works.length?`<div class="pills">${r.works.map(w=>`<span class="pill" style="background:${gearColor(w.g)};color:${textOn(gearColor(w.g))}" title="${gearLabel(w.g)}: ${w.hours} h in range">${gearShort(w.g)} ${w.hours}h</span>`).join('')}</div>`:'–'}</td><td class="m">${fmtW(r.max)}</td><td class="t">${r.tmin==null?'–':r.tmin+' to '+r.tmax}</td></tr>`+
+    return `<tr class="${r.match?'':'miss'} ${date===st.focusDate&&spot===st.focusSpot?'focus':''} ${offS?'offs':''}" id="row-${spot}-${date}"><td class="d">${fmtDate(date)}${offS?'<em class="offtag">off-season</em>':''}${fc?`<span class="fc" title="Forecast: ${viewLabel()}">forecast · ${d[6]||''}</span>`:`<span class="srctag" title="${viewLabel()}">${META.view==='combined'?'combined'+(d[10]&&d[10]<activeModels().length?` ${d[10]}/${activeModels().length}`:''):shortName(META.view)}</span>`}<small>${wd(date)}${multi?' · '+SPOTS[spot].name:''}</small>${(()=>{const pills=r.works.length?r.works.map(w=>`<span class="pill" style="background:${gearColor(w.g)};color:${textOn(gearColor(w.g))}" title="${gearLabel(w.g)}: ${w.hours} h in range">${gearShort(w.g)} ${w.hours}h</span>`).join(''):'<span class="pill none">no gear</span>'; return hasL?`<button class="xbtn gx" data-x="${xk}" aria-expanded="${open}" aria-label="${open?'Hide':'Show'} details for ${fmtDate(date)}"><span class="pills">${pills}</span><span class="car">${open?'▾':'▸'}</span></button>`:`<span class="pills gx">${pills}</span>`})()}</td>${sp.map((v,i)=>`<td><div class="cell ${r.inWin[i]?'':'out'} ${r.hit.has(i)?'hit':''}" style="background:${color(v)};color:${colorFg(v)}" title="${String(HOURS[i]).padStart(2,'0')}h: ${fmtW(v)} ${UL()}${dr[i]!=null?' from '+sector(dr[i])+' ('+dr[i]+'°)':''}${gu&&gu[i]!=null?', gusts '+fmtW(gu[i])+' '+UL():''}${tp[i]!=null?', '+tp[i]+' °C':''}">${fmtW(v)}${dr[i]!=null&&v!=null?arrow(dr[i]):''}</div></td>`).filter((_,i)=>vis[i]).join('')}</tr>`+
     (!open?'':(L.has('models')&&d[9]?META.blend.map(m=>{const v=d[9][m], off=META.view==='combined'&&META.off.includes(m), cur=META.view===m;
-      return `<tr class="sub ${r.match?'':'miss'} ${off?'moff':''}"><td class="lab"><i style="background:${modelColor(m)}"></i>${shortName(m)}${cur?' (shown)':off?' (off)':''} ${UL()}</td>${HOURS.map((h,i)=>`<td><div class="mini ${win(i)?'':'out'}" style="background:${color(v&&v[i])};color:${colorFg(v&&v[i])}">${v&&v[i]!=null?fmtW(v[i]):'–'}</div></td>`).filter((_,i)=>vis[i]).join('')}<td colspan="3"></td></tr>`}).join(''):'')+(L.has('gust')?subRow(r.match?'':'miss',`gusts ${UL()}`,HOURS.map((h,i)=>`<td><div class="mini ${win(i)?'':'out'}" style="background:${color(gu&&gu[i])};color:${colorFg(gu&&gu[i])}">${gu&&gu[i]!=null?fmtW(gu[i]):'–'}</div></td>`)):'')+
+      return `<tr class="sub ${r.match?'':'miss'} ${off?'moff':''}"><td class="lab"><i style="background:${modelColor(m)}"></i>${shortName(m)}${cur?' (shown)':off?' (off)':''} ${UL()}</td>${HOURS.map((h,i)=>`<td><div class="mini ${win(i)?'':'out'}" style="background:${color(v&&v[i])};color:${colorFg(v&&v[i])}">${v&&v[i]!=null?fmtW(v[i]):'–'}</div></td>`).filter((_,i)=>vis[i]).join('')}</tr>`}).join(''):'')+(L.has('gust')?subRow(r.match?'':'miss',`gusts ${UL()}`,HOURS.map((h,i)=>`<td><div class="mini ${win(i)?'':'out'}" style="background:${color(gu&&gu[i])};color:${colorFg(gu&&gu[i])}">${gu&&gu[i]!=null?fmtW(gu[i]):'–'}</div></td>`)):'')+
     (L.has('temp')?subRow(r.match?'':'miss','air °C',HOURS.map((h,i)=>`<td><div class="mini ${win(i)?'':'out'}" style="background:${tcol(tp[i])}">${tp[i]??'–'}</div></td>`)):'')+
     (L.has('cloud')?subRow(r.match?'':'miss','clouds %',HOURS.map((h,i)=>{const c=d[7]&&d[7][i]; return `<td><div class="mini txt cloudbar ${win(i)?'':'out'}" title="${c!=null?c+'% cloud cover':'no cloud data'}"><i style="height:${c??0}%"></i><span>${c??'–'}</span></div></td>`})):'')+
     (L.has('tide')&&d[8]?subRow(r.match?'':'miss','tide m',HOURS.map((h,i)=>{const v=d[8][i]; return `<td><div class="mini txt ${win(i)?'':'out'}" title="Sea level vs mean sea level (not for navigation)">${v==null?'–':(v>0?'+':'')+v.toFixed(2)}</div></td>`})):''));
