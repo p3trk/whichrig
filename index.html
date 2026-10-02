@@ -84,6 +84,9 @@ input[type=range]{width:100%;accent-color:var(--sock)}
 .days th:first-child,.days td.d{text-align:left;padding-left:16px;white-space:nowrap}
 .days td{padding:2px;text-align:center}
 .days td.d{font-weight:600;font-size:14px;padding-right:8px}
+.days td.d{width:1%;min-width:200px;max-width:240px;white-space:normal}
+.days th:first-child{width:1%}
+.days td.d .fc,.days td.d .srctag,.days td.d .offtag{white-space:nowrap}
 .days td.d small{display:block;font-weight:400;color:var(--muted);font-size:12px;line-height:1.2}
 .cell{height:34px;min-width:30px;border-radius:5px;display:flex;flex-direction:column;align-items:center;justify-content:center;font:600 13px/1 Barlow,sans-serif}
 .cell svg{width:11px;height:11px;margin-top:2px}
@@ -104,7 +107,7 @@ tr.miss td{opacity:.35}
 .pill.none{background:transparent;color:var(--muted);border:1px dashed var(--line)}
 .days th:first-child,.days td.d,.days tr.sub td.lab{position:sticky;left:0;z-index:2;background:var(--panel)}
 .days tr.focus td.d{background:color-mix(in srgb,var(--sock) 9%,var(--panel))}
-@media (max-width:560px){.days td.d{max-width:128px;white-space:normal}.days td.d .fc,.days td.d .srctag{display:block;margin:3px 0 0;width:auto;max-width:118px;white-space:normal;line-height:1.25}}
+@media (max-width:560px){.days td.d{min-width:128px;max-width:150px;white-space:normal}.xbtn.gx,.pills.gx{max-width:140px}.days td.d .fc,.days td.d .srctag{display:block;margin:3px 0 0;width:auto;max-width:118px;white-space:normal;line-height:1.25}}
 .days tr.focus td{background:color-mix(in srgb,var(--sock) 9%,transparent)}
 .days tr.focus td.d{box-shadow:inset 4px 0 0 var(--sock)}
 .days tr.sub td{border-top:none;padding-top:0;padding-bottom:1px}
@@ -499,7 +502,7 @@ a{color:var(--sock)}
 </div></nav>
 
 <script>
-const APP_VERSION='3.3'; // app-<major>-<minor>; see the lake-wind-days-builds skill
+const APP_VERSION='3.4'; // app-<major>-<minor>; see the lake-wind-days-builds skill
 // ---- data store (Open-Meteo, cached in this browser)
 const DEFAULT_SPOTS={hlucin:{name:'Hlučín',lat:49.89,lon:18.17,tides:false},novemlyny:{name:'Nové Mlýny',lat:48.88,lon:16.68,tides:false},olesna:{name:'Olešná',lat:49.65,lon:18.30,tides:false}};
 // One catalogue for history (Historical Forecast API) and forecast (Forecast API).
@@ -806,6 +809,7 @@ function renderDays(){
   const subRow=(cls,lab,cells)=>`<tr class="sub ${cls}"><td class="lab">${lab}</td>${V(cells).join('')}</tr>`;
   const head=`<tr><th>Day</th>${V(HOURS).map(h=>`<th>${String(h).padStart(2,'0')}</th>`).join('')}</tr>`;
   if(!shown.length){$('tbl').innerHTML=head+`<tr><td colspan="${nVis+1}" class="empty">No rideable days with these settings. Add larger gear, lower the minimal temperature, widen the time of day, or shorten the duration.</td></tr>`;$('more').hidden=true;return}
+  $('tbl').style.minWidth=(200+nVis*52)+'px';
   $('tbl').innerHTML=head+shown.slice(0,st.limit).map(({spot,d,r})=>{
     const [date,sp,dr,tp,gu,fc]=d;
     const xk=spot+'|'+date, open=st.expandAll||st.expanded.has(xk), hasL=[...L].some(k=>k==='tide'?d[8]:k==='models'?d[9]:true);
