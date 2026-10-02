@@ -508,7 +508,7 @@ a{color:var(--sock)}
 </div></nav>
 
 <script>
-const APP_VERSION='3.12'; // app-<major>-<minor>; see the lake-wind-days-builds skill
+const APP_VERSION='3.13'; // app-<major>-<minor>; see the lake-wind-days-builds skill
 // ---- data store (Open-Meteo, cached in this browser)
 const DEFAULT_SPOTS={hlucin:{name:'Hlučín',lat:49.89,lon:18.17,tides:false},novemlyny:{name:'Nové Mlýny',lat:48.88,lon:16.68,tides:false},olesna:{name:'Olešná',lat:49.65,lon:18.30,tides:false}};
 // One catalogue for history (Historical Forecast API) and forecast (Forecast API).
@@ -1088,7 +1088,7 @@ function renderCalendar(){
     else { b.className='snote out'; b.innerHTML=`<b>Off-season</b> · your season (${seasonName()}) starts ${longDate(ss.start)}.` } }
   $('calBody').innerHTML=`<div class="calmonths" style="grid-template-columns:repeat(${weeks.length},minmax(0,1fr))">${monthLbl}</div><div class="calgrid" style="grid-template-columns:repeat(${weeks.length},minmax(0,1fr))" role="img" aria-label="Calendar of rideable days in ${year}, coloured by gear">${cells.join('')}</div>`;
   const mx=Math.max(1,...cnt.values());
-  $('calBars').innerHTML=[...cnt.entries()].sort((a,b)=>b[1]-a[1]).map(([g,n])=>`<div class="gbar"><div class="row1"><span style="font-weight:600">${gearShort(g)}</span><b>${n} d</b></div><div class="trk"><i style="width:${Math.round(n/mx*100)}%;background:${gearColor(g)}"></i></div></div>`).join('')||'<span class="status">No rideable days with these settings.</span>';
+  $('calBars').innerHTML=[...cnt.entries()].sort((a,b)=>b[1]-a[1]).map(([g,n])=>`<div class="gbar"><div class="row1"><span style="font-weight:600">${gearIcon(g.type)}${gearLabel(g)}</span><b>${n} d</b></div><div class="trk"><i style="width:${Math.round(n/mx*100)}%;background:${gearColor(g)}"></i></div></div>`).join('')||'<span class="status">No rideable days with these settings.</span>';
 }
 function renderWhen(){
   if($('appVer')) $('appVer').textContent='v'+APP_VERSION;
