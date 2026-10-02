@@ -96,7 +96,8 @@ td.m{font:600 14px "Barlow Semi Condensed",Barlow,sans-serif;padding:0 8px}
 td.t{font-size:13px;color:var(--muted);white-space:nowrap;padding:0 8px}
 td.g{text-align:left;padding:0 10px 0 8px;min-width:150px;max-width:220px}
 .pills{display:flex;flex-wrap:wrap;gap:3px}
-.pill{font:600 11px/1 Barlow,sans-serif;border-radius:4px;padding:4px 5px;white-space:nowrap}
+.pill{font:600 11px/1 Barlow,sans-serif;border-radius:4px;padding:4px 5px;white-space:nowrap;display:inline-flex;align-items:center}
+.gi{width:1.2em;height:1.2em;flex:none;vertical-align:-.2em;margin-right:3px}
 tr.miss td{opacity:.35}
 .days tr + tr td{border-top:1px solid color-mix(in srgb,var(--line) 55%,transparent)}
 .xbtn{border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:6px;font:600 11px/1 Barlow,sans-serif;padding:3px 6px;margin-top:4px;cursor:pointer;display:inline-block}
@@ -502,7 +503,7 @@ a{color:var(--sock)}
 </div></nav>
 
 <script>
-const APP_VERSION='3.4'; // app-<major>-<minor>; see the lake-wind-days-builds skill
+const APP_VERSION='3.5'; // app-<major>-<minor>; see the lake-wind-days-builds skill
 // ---- data store (Open-Meteo, cached in this browser)
 const DEFAULT_SPOTS={hlucin:{name:'Hlučín',lat:49.89,lon:18.17,tides:false},novemlyny:{name:'Nové Mlýny',lat:48.88,lon:16.68,tides:false},olesna:{name:'Olešná',lat:49.65,lon:18.30,tides:false}};
 // One catalogue for history (Historical Forecast API) and forecast (Forecast API).
@@ -693,7 +694,13 @@ function autoRange(g){ const c=calcGear(g); return [half(c.low),half(c.high)]; }
 function gearRange(g){ if(!g.manual){[g.low,g.high]=autoRange(g)} return [g.low,g.high]; }
 const gearLabel=g=>{const dup=TYPES[g.type].foil&&st.gear.some(x=>x!==g&&x.type===g.type&&x.size===g.size);return `${TYPES[g.type].name} ${g.size} m²${dup?' / '+g.foil+' cm²':''}`};
 const SHORT={windfoil:'foil',wingfoil:'wing',fin:'fin'};
-const gearShort=g=>`${g.size} ${SHORT[g.type]}`;
+const GI_SW='stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"';
+const GI={ // small gear icons (inherit the text colour)
+  fin:`<path d="M7.5 1.5v10"/><path d="M7.5 1.5Q13 5 12.5 10.5H7.5Z" fill="currentColor" fill-opacity=".35"/><path d="M1.5 12.5Q8 13.6 14.5 12"/><path d="M4 12.9 4.6 15.2 6 13.1" fill="currentColor"/>`,
+  windfoil:`<path d="M7.5 1v9.3"/><path d="M7.5 1Q13 4.2 12.5 8.8H7.5Z" fill="currentColor" fill-opacity=".35"/><path d="M1.5 10.5Q8 11.5 14.5 10"/><path d="M8.5 11v3.8M5 14.8h7"/>`,
+  wingfoil:`<path d="M1.5 7Q8 -1 14.5 7Q8 3.4 1.5 7Z" fill="currentColor" fill-opacity=".35"/><path d="M2.5 10.8Q8 11.7 13.5 10.3"/><path d="M8 11.3v3.5M4.5 14.8h7"/>`};
+const gearIcon=t=>`<svg class="gi" viewBox="0 0 16 16" ${GI_SW} role="img" aria-label="${TYPES[t].name}"><title>${TYPES[t].name}</title>${GI[t]}</svg>`;
+const gearShort=g=>`${gearIcon(g.type)}${g.size}`;
 function gearColor(g){
   const same=st.gear.filter(x=>x.type===g.type).sort((a,b)=>b.size-a.size||a.id-b.id);
   const n=same.length, i=same.indexOf(g);
@@ -960,7 +967,7 @@ function panelSums(){
   S('data',`${ks.length} spot${ks.length!==1?'s':''}${got<ks.length?` · <b>${ks.length-got} without data</b>`:''} · ${viewLabel()}${last?' · updated '+new Date(last).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):''}${$('dataStatus')&&$('dataStatus').textContent?' · '+$('dataStatus').textContent:''}`);
   S('where',`${Object.keys(SPOTS).filter(k=>st.spots.has(k)).map(k=>SPOTS[k].name).join(', ')} · ${MONTHS[st.mFrom]}–${MONTHS[st.mTo]} · ${[...st.years].sort().join(', ')}`);
   const on=st.gear.filter(g=>g.on);
-  S('gear',`${st.weight} kg · ${on.length} of ${st.gear.length} gear on${on.length?': '+on.map(g=>`${g.size} ${SHORT[g.type]}`).join(', '):''}`);
+  S('gear',`${st.weight} kg · ${on.length} of ${st.gear.length} gear on${on.length?': '+on.map(gearShort).join(', '):''}`);
   const dirsSet=Object.keys(SPOTS).filter(k=>st.spots.has(k)&&st.dirs[k]&&st.dirs[k].size<8).length;
   S('cond',`${st.dur*2} h+ · ${String(st.hFrom).padStart(2,'0')}–${String(st.hTo).padStart(2,'0')}h · ${st.minT==null?'any temp':'≥ '+st.minT+' °C'}${dirsSet?` · direction limited at ${dirsSet} spot${dirsSet>1?'s':''}`:''} · ${UL()}`);
   S('sum',`${results.filter(x=>x.r.match).length} rideable spot-days`);
@@ -1006,7 +1013,7 @@ function renderNext(){
   // quiver chips
   st.gear.forEach(g=>{ if(g.pinned===undefined) g.pinned=g.on });
   $('qchips').innerHTML=st.gear.filter(g=>g.on||g.pinned).map(g=>{const c=gearColor(g), [lo,hi]=gearRange(g);
-    return `<button type="button" class="qchip ${g.on?'on':'faded'}" data-gid="${g.id}" aria-pressed="${g.on}" title="${g.on?'Tap to leave out':'Tap to use again'}" style="background:${c};border-color:${c};color:${textOn(c)}">${g.size} ${SHORT[g.type]} <small>${toU(lo)}–${toU(hi)} ${UL()}</small></button>`}).join('');
+    return `<button type="button" class="qchip ${g.on?'on':'faded'}" data-gid="${g.id}" aria-pressed="${g.on}" title="${g.on?'Tap to leave out':'Tap to use again'}" style="background:${c};border-color:${c};color:${textOn(c)}">${gearShort(g)} <small>${toU(lo)}–${toU(hi)} ${UL()}</small></button>`}).join('');
   $('qchips').querySelectorAll('[data-gid]').forEach(b=>b.onclick=()=>{const g=st.gear.find(x=>x.id==b.dataset.gid); g.on=!g.on; g.pinned=true; renderGear(); update(); const nb=document.querySelector(`[data-gid="${g.id}"]`); nb&&nb.focus()});
   if(!dates.length){ $('nextBig').textContent='No forecast yet'; $('nextSmall').textContent='Open Spots and press "Download all spots".';
     $('dcards').innerHTML='<div class="empty2">Forecast days appear here after the first download.</div>'; return }
@@ -1026,7 +1033,7 @@ function renderNext(){
     return divider+`<button type="button" class="dcard${off?' off':''}" data-card="${date}" data-spot="${top.k}" aria-label="${dObj(date).toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'})}, ${SPOTS[top.k].name}: ${lbl[top.v]}. Open this day in Season"><span class="top">
       <span class="dd">${dObj(date).toLocaleDateString('en-GB',{weekday:'short'})} ${+date.slice(8)}${off?'<em class="offtag">off-season</em>':''}</span>
       <span class="vpill ${top.v}">${lbl[top.v]}</span>
-      <span class="gear">${top.pick?`<i class="gdot" style="background:${gearColor(top.pick)}"></i>${top.pick.size} ${SHORT[top.pick.type]}`:'<span style="color:var(--muted);font-weight:600">No gear fits</span>'}</span>
+      <span class="gear">${top.pick?`<i class="gdot" style="background:${gearColor(top.pick)}"></i>${gearShort(top.pick)}`:'<span style="color:var(--muted);font-weight:600">No gear fits</span>'}</span>
       <span class="spot">${keys.length>1&&top.v!=='no'?SPOTS[top.k].name:''}</span></span>
       <span class="strip" style="grid-template-columns:repeat(${inWin.length},minmax(0,1fr))">${strip}</span>
       <span class="meta"><span>${top.v==='no'?`Max ${fmtW(top.r.max)} ${UL()} · too ${top.r.max!=null&&st.gear.some(g=>g.on&&top.r.max>gearRange(g)[1])?'strong':'light'} for your gear`:`${hitWindow(top.r)} · ${fmtW(Math.min(...top.r.hit.size?[...top.r.hit].map(i=>top.d[1][i]):[0]))}–${fmtW(Math.max(...top.r.hit.size?[...top.r.hit].map(i=>top.d[1][i]):[0]))} ${UL()}`}</span><span>${dots}${top.ag.yes}/${top.ag.n} models agree</span></span>
@@ -1075,7 +1082,7 @@ function renderCalendar(){
     else { b.className='snote out'; b.innerHTML=`<b>Off-season</b> · your season (${seasonName()}) starts ${longDate(ss.start)}.` } }
   $('calBody').innerHTML=`<div class="calmonths" style="grid-template-columns:repeat(${weeks.length},minmax(0,1fr))">${monthLbl}</div><div class="calgrid" style="grid-template-columns:repeat(${weeks.length},minmax(0,1fr))" role="img" aria-label="Calendar of rideable days in ${year}, coloured by gear">${cells.join('')}</div>`;
   const mx=Math.max(1,...cnt.values());
-  $('calBars').innerHTML=[...cnt.entries()].sort((a,b)=>b[1]-a[1]).map(([g,n])=>`<div class="gbar"><div class="row1"><span style="font-weight:600">${g.size} ${SHORT[g.type]}</span><b>${n} d</b></div><div class="trk"><i style="width:${Math.round(n/mx*100)}%;background:${gearColor(g)}"></i></div></div>`).join('')||'<span class="status">No rideable days with these settings.</span>';
+  $('calBars').innerHTML=[...cnt.entries()].sort((a,b)=>b[1]-a[1]).map(([g,n])=>`<div class="gbar"><div class="row1"><span style="font-weight:600">${gearShort(g)}</span><b>${n} d</b></div><div class="trk"><i style="width:${Math.round(n/mx*100)}%;background:${gearColor(g)}"></i></div></div>`).join('')||'<span class="status">No rideable days with these settings.</span>';
 }
 function renderWhen(){
   if($('appVer')) $('appVer').textContent='v'+APP_VERSION;
