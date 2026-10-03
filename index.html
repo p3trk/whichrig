@@ -172,7 +172,7 @@ tr.miss td{opacity:.35}
 .bchip .chip b{font-weight:700;margin-left:4px}
 .bchip .wt{display:inline-flex;align-items:center;margin-left:3px;font-size:12px;color:var(--muted)}
 .bchip .wt input[type=range]{width:110px;margin:0 6px;accent-color:var(--sock)}
-.bchip .wt output{min-width:30px;font:600 13px Barlow,sans-serif;color:var(--ink)}
+.bchip .wt output{display:none}
 #blend{flex-direction:column;align-items:flex-start;gap:6px}
 .bchip .chip{min-width:118px;text-align:left}
 .bchip:not(.on) .wt{opacity:.5}
@@ -516,7 +516,7 @@ a{color:var(--sock)}
 </div></nav>
 
 <script>
-const APP_VERSION='3.16'; // app-<major>-<minor>; see the lake-wind-days-builds skill
+const APP_VERSION='3.17'; // app-<major>-<minor>; see the lake-wind-days-builds skill
 // ---- data store (Open-Meteo, cached in this browser)
 const DEFAULT_SPOTS={hlucin:{name:'Hlučín',lat:49.89,lon:18.17,tides:false},novemlyny:{name:'Nové Mlýny',lat:48.88,lon:16.68,tides:false},olesna:{name:'Olešná',lat:49.65,lon:18.30,tides:false}};
 // One catalogue for history (Historical Forecast API) and forecast (Forecast API).
