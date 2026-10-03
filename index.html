@@ -22,7 +22,7 @@
 *,*::before,*::after{box-sizing:inherit}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.5 Barlow,system-ui,-apple-system,"Segoe UI",sans-serif}
-.wrap{max-width:640px;margin:0 auto;padding:20px 16px 110px}
+.wrap{max-width:640px;margin:0 auto;padding:10px 16px 110px}
 h1{font:700 clamp(28px,5vw,44px)/1.05 "Barlow Semi Condensed",Barlow,system-ui,sans-serif;margin:0;letter-spacing:-.01em}
 h2{font:700 20px/1.2 "Barlow Semi Condensed",Barlow,sans-serif;margin:0 0 12px}
 .sub{color:var(--muted);margin:6px 0 22px;max-width:75ch}
@@ -214,7 +214,14 @@ a{color:var(--sock)}
 .psum{font-size:13px;color:var(--muted)}
 .fold[open] .psum{display:none}
 .fold .psum b{color:var(--ink);font-weight:600}
-.apphead{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px}
+.apphead{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:10px}
+.hdrL{display:flex;flex-direction:column;gap:8px;flex:0 1 auto;min-width:0}
+.apphead .brand{white-space:nowrap}.apphead .brand svg{flex:none}
+.hdrR{flex:1 1 0;min-width:0}
+.apphead .snote{width:0;min-width:100%;box-sizing:border-box}
+@media (max-width:480px){.apphead .brand{font-size:18px;gap:6px}.apphead .brand svg{width:24px;height:24px}.hdrR{min-width:125px}.apphead .when{font-size:11px;line-height:1.3}}
+.apphead .snote{margin:0;padding:6px 9px;font-size:12.5px;line-height:1.3;border-radius:8px;align-self:flex-start}
+body:not(.on-next) #seasonNote{display:none}
 .apphead .brand{display:flex;align-items:center;gap:10px;font:700 22px/1 "Barlow Semi Condensed",Barlow,sans-serif}
 .apphead .when{font-size:12px;color:var(--muted);text-align:right}
 .ver{font:600 11px Barlow,sans-serif;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:2px 7px;align-self:center}
@@ -303,14 +310,14 @@ a{color:var(--sock)}
 <body>
 <div class="wrap">
   <header class="apphead">
-    <div class="brand"><svg width="30" height="30" viewBox="0 0 40 40" aria-hidden="true"><path d="M8 32 L20 6 L32 32 Z" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"></path><path d="M20 6 L20 32" stroke="#C4460F" stroke-width="2.5"></path><path d="M4 36 H36" stroke="#1F7478" stroke-width="2.5" stroke-linecap="round"></path></svg><h1 style="font:inherit;margin:0">Lake wind days</h1><span class="ver" id="appVer"></span></div>
+    <div class="hdrL"><div class="brand"><svg width="30" height="30" viewBox="0 0 40 40" aria-hidden="true"><path d="M8 32 L20 6 L32 32 Z" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"></path><path d="M20 6 L20 32" stroke="#C4460F" stroke-width="2.5"></path><path d="M4 36 H36" stroke="#1F7478" stroke-width="2.5" stroke-linecap="round"></path></svg><h1 style="font:inherit;margin:0">Lake wind days</h1><span class="ver" id="appVer"></span></div>
+    <p class="snote" id="seasonNote" hidden></p></div>
     <div class="hdrR"><div class="when" id="when"></div><div class="seg" id="hdrUnit" role="group" aria-label="Wind units"></div></div>
   </header>
   <p class="sub" id="sub" hidden></p>
 
   <section class="tab" id="tab-next" aria-label="Next days">
     <div class="hero"><div class="hbig" id="nextBig"></div><div class="small" id="nextSmall"></div></div>
-    <p class="snote" id="seasonNote" hidden></p>
     <div class="qchips" id="qchips" role="group" aria-label="Your gear: switch it on or off"></div>
     <div class="dcards" id="dcards"></div>
     <p class="hint" style="margin-top:12px">Ride: at least one gear works for the chosen number of hours. Maybe: a gear works, but for less time. Squares show how many models agree with the verdict. Filters for hours, temperature and direction are under Spots.</p>
@@ -532,7 +539,7 @@ a{color:var(--sock)}
 </div></nav>
 
 <script>
-const APP_VERSION='3.21'; // app-<major>-<minor>; see the lake-wind-days-builds skill
+const APP_VERSION='3.22'; // app-<major>-<minor>; see the lake-wind-days-builds skill
 // ---- data store (Open-Meteo, cached in this browser)
 const DEFAULT_SPOTS={hlucin:{name:'Hlučín',lat:49.89,lon:18.17,tides:false},novemlyny:{name:'Nové Mlýny',lat:48.88,lon:16.68,tides:false},olesna:{name:'Olešná',lat:49.65,lon:18.30,tides:false}};
 // One catalogue for history (Historical Forecast API) and forecast (Forecast API).
@@ -1143,6 +1150,7 @@ setInterval(refreshIfStale,15*60e3);
 const TAB_KEY='lakewind-tab-v1';
 function showTab(id){
   document.querySelectorAll('.tab').forEach(s=>s.hidden=s.id!=='tab-'+id);
+  document.body.classList.toggle('on-next',id==='next');
   if(id==='next'&&st.focusDate){ st.focusDate=null; st.focusSpot=null; try{update()}catch(e){} }
   document.querySelectorAll('.tabbar [data-tab]').forEach(b=>b.setAttribute('aria-current',b.dataset.tab===id?'page':'false'));
   try{localStorage.setItem(TAB_KEY,id)}catch(e){}
