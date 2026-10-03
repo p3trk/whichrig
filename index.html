@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Lake wind days</title>
+<title>Which Rig</title>
 <meta name="theme-color" content="#F6F3EC">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -318,7 +318,7 @@ body:not(.on-next) #seasonNote{display:none}
 <body>
 <div class="wrap">
   <header class="apphead">
-    <div class="hdrL"><div class="brand"><svg width="30" height="30" viewBox="0 0 40 40" aria-hidden="true"><path d="M8 32 L20 6 L32 32 Z" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"></path><path d="M20 6 L20 32" stroke="#C4460F" stroke-width="2.5"></path><path d="M4 36 H36" stroke="#1F7478" stroke-width="2.5" stroke-linecap="round"></path></svg><h1 style="font:inherit;margin:0">Lake wind days</h1><span class="ver" id="appVer"></span></div>
+    <div class="hdrL"><div class="brand"><svg width="30" height="30" viewBox="0 0 40 40" aria-hidden="true"><path d="M8 32 L20 6 L32 32 Z" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"></path><path d="M20 6 L20 32" stroke="#C4460F" stroke-width="2.5"></path><path d="M4 36 H36" stroke="#1F7478" stroke-width="2.5" stroke-linecap="round"></path></svg><h1 style="font:inherit;margin:0">Which Rig</h1><span class="ver" id="appVer"></span></div>
     <p class="snote" id="seasonNote" hidden></p></div>
     <div class="hdrR"><div class="when" id="when"></div><div class="seg" id="hdrUnit" role="group" aria-label="Wind units"></div></div>
   </header>
@@ -547,7 +547,7 @@ body:not(.on-next) #seasonNote{display:none}
 </div></nav>
 
 <script>
-const APP_VERSION='3.23'; // app-<major>-<minor>; see the lake-wind-days-builds skill
+const APP_VERSION='3.24'; // app-<major>-<minor>; see the lake-wind-days-builds skill
 // ---- data store (Open-Meteo, cached in this browser)
 const DEFAULT_SPOTS={hlucin:{name:'Hlučín',lat:49.89,lon:18.17,tides:false},novemlyny:{name:'Nové Mlýny',lat:48.88,lon:16.68,tides:false},olesna:{name:'Olešná',lat:49.65,lon:18.30,tides:false}};
 // One catalogue for history (Historical Forecast API) and forecast (Forecast API).
@@ -1445,10 +1445,10 @@ $('start').onchange=e=>{const v=e.target.value; if(v){META.start=v; META.startAu
   setStatus('Start date changed. Press "Download all spots" to fetch the new range for all models.')}};
 $('dlAll').onclick=()=>runDownload(Object.keys(SPOTS),'full');
 $('updAll').onclick=()=>runDownload(Object.keys(SPOTS).filter(k=>SPOTS[k].days.length).length?Object.keys(SPOTS):Object.keys(SPOTS),'update');
-$('expData').onclick=()=>saveText(`lake-wind-data-${todayISO()}.json`,JSON.stringify({app:'lake-wind-days',version:3,meta:META,spots:Object.fromEntries(Object.entries(SPOTS).map(([k,s])=>{const {days,idx,...rest}=s; return [k,rest]}))}),'application/json',$('dataStatus'),'Data exported.');
+$('expData').onclick=()=>saveText(`which-rig-data-${todayISO()}.json`,JSON.stringify({app:'which-rig',version:3,meta:META,spots:Object.fromEntries(Object.entries(SPOTS).map(([k,s])=>{const {days,idx,...rest}=s; return [k,rest]}))}),'application/json',$('dataStatus'),'Data exported.');
 $('impBtn').onclick=()=>$('impFile').click();
 $('impFile').onchange=async e=>{const f=e.target.files[0]; if(!f) return;
-  try{ const j=JSON.parse(await f.text()); if(!j.spots||typeof j.spots!=='object') throw new Error('not a Lake wind days data file');
+  try{ const j=JSON.parse(await f.text()); if(!j.spots||typeof j.spots!=='object') throw new Error('not a Which Rig data file');
     for(const [k,s] of Object.entries(j.spots)){ if(typeof s.lat!=='number'||typeof s.lon!=='number') throw new Error('spot '+k+' is incomplete'); if(!s.m||typeof s.m!=='object') throw new Error('this file is from an older version of the app (no per-model data); download the spots again instead') }
     SPOTS=j.spots; for(const s of Object.values(SPOTS)){ s.tide=s.tide||{}; s.days=[] } Object.assign(META,j.meta||{}); loadStoreFix(); $('start').value=META.start; $('startAuto').checked=META.startAuto; $('fcDays').value=META.fcDays||5; renderBlend(); rebuildAll();
     st.spots=new Set(Object.keys(SPOTS)); saveStore(); afterDataChange(); setStatus(`Imported ${Object.keys(SPOTS).length} spots from ${f.name}.`);
