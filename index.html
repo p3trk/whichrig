@@ -170,6 +170,10 @@ tr.miss td{opacity:.35}
 .bchip{display:inline-flex;align-items:center;gap:0}
 .bchip .chip i,.mcov i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:0}
 .bchip .chip b{font-weight:700;margin-left:4px}
+.bchip .wt{display:inline-flex;align-items:center;margin-left:3px;font-size:12px;color:var(--muted)}
+.bchip .wt input{width:40px;padding:3px 2px;font:600 13px Barlow,sans-serif;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--ink);margin-left:1px}
+.bchip:not(.on) .wt{opacity:.5}
+#wReset[hidden]{display:none}
 .bchip:not(.on) .chip{opacity:.6;text-decoration:line-through}
 .mcovs{display:flex;flex-direction:column;gap:2px;font-size:12px}
 .mcov{white-space:nowrap}.mcov.off{opacity:.5}
@@ -385,8 +389,9 @@ a{color:var(--sock)}
     <summary><h2 id="h-data">Wind data</h2><span class="psum" id="s-data"></span></summary>
     <div class="cols">
       <div style="grid-column:span 2">
-        <span class="lbl" id="blendLbl">Model blend <span class="status" style="font-weight:400">(all are downloaded; switch one off to leave it out of the average)</span></span>
+        <span class="lbl" id="blendLbl">Model blend <span class="status" style="font-weight:400">(all are downloaded; switch one off to leave it out of the average, or change its weight ×0.5–×5)</span></span>
         <div class="row" id="blend" role="group" aria-labelledby="blendLbl"></div>
+        <button class="btn ghost" id="wReset" type="button" style="margin-top:8px;padding:4px 10px" hidden>Equal weights</button>
         <div class="row" style="margin-top:8px;flex-wrap:nowrap">
           <label class="status" for="addModel" style="white-space:nowrap">Add model</label>
           <select id="addModel" style="width:auto;max-width:260px"></select>
@@ -508,7 +513,7 @@ a{color:var(--sock)}
 </div></nav>
 
 <script>
-const APP_VERSION='3.14'; // app-<major>-<minor>; see the lake-wind-days-builds skill
+const APP_VERSION='3.15'; // app-<major>-<minor>; see the lake-wind-days-builds skill
 // ---- data store (Open-Meteo, cached in this browser)
 const DEFAULT_SPOTS={hlucin:{name:'Hlučín',lat:49.89,lon:18.17,tides:false},novemlyny:{name:'Nové Mlýny',lat:48.88,lon:16.68,tides:false},olesna:{name:'Olešná',lat:49.65,lon:18.30,tides:false}};
 // One catalogue for history (Historical Forecast API) and forecast (Forecast API).
@@ -571,12 +576,18 @@ const FC_MODELS=CAT; // same catalogue for forecasts
 const DEFAULT_BLEND=['gfs_seamless','icon_global','ecmwf_ifs','ukmo_global_deterministic_10km'];
 CAT['icon_global'].name='ICON'; CAT['ecmwf_ifs'].name='IFS'; CAT['ukmo_global_deterministic_10km'].name='UKMO Global';
 const activeModels=()=>META.blend.filter(m=>!META.off.includes(m));
+// blend weights: META.w[model] is a relative weight (default 1); share = weight / sum of switched-on weights
+const mWt=m=>{const v=META.w&&+META.w[m]; return v>0?v:1};
+const mShare=m=>{const a=activeModels(); if(!a.includes(m)) return 0; const t=a.reduce((x,y)=>x+mWt(y),0); return t?mWt(m)/t:0};
+const pct=m=>Math.round(mShare(m)*100)+'%';
+const equalW=()=>{const a=activeModels(); return a.every(m=>mWt(m)===mWt(a[0]))};
+const blendText=()=>{const a=activeModels(); return equalW()?`${a.map(shortName).join(', ')} (${Math.round(100/a.length)}% each)`:a.map(m=>`${shortName(m)} ${pct(m)}`).join(', ')};
 const shortName=m=>CAT[m]?.name||m;
 const MODEL_COLORS=['#1F77B4','#D1495B','#2E9E5B','#8A4FBF','#C98A00','#1F9E9E','#E07A1F','#6B7C8A'];
 const modelColor=m=>MODEL_COLORS[Math.max(0,META.blend.indexOf(m))%MODEL_COLORS.length];
 function viewLabel(){
   if(META.view!=='combined') return `Model · ${shortName(META.view)}`;
-  const a=activeModels(); return a.length?`Combined · ${a.map(shortName).join(', ')} (${Math.round(100/a.length)}% each)`:'Combined · no model switched on';
+  const a=activeModels(); return a.length?`Combined · ${blendText()}`:'Combined · no model switched on';
 }
 const VARS='wind_speed_10m,wind_direction_10m,wind_gusts_10m,temperature_2m,cloud_cover';
 const MARINE_URL='https://marine-api.open-meteo.com/v1/marine', TIDE_MIN='2022-01-01';
@@ -593,6 +604,7 @@ function loadStore(){
   for(const k in SPOTS){ SPOTS[k].m=SPOTS[k].m||{}; SPOTS[k].tide=SPOTS[k].tide||{}; SPOTS[k].days=[] }
   META.blend=(META.blend||DEFAULT_BLEND).filter(m=>CAT[m]); if(!META.blend.length) META.blend=DEFAULT_BLEND.slice();
   META.off=(META.off||[]).filter(m=>META.blend.includes(m));
+  META.w=Object.fromEntries(Object.entries(META.w||{}).filter(([m,v])=>META.blend.includes(m)&&+v>0).map(([m,v])=>[m,+v]));
   if(META.view!=='combined'&&!META.blend.includes(META.view)) META.view='combined';
 }
 const IDB={db:null,
@@ -1205,7 +1217,7 @@ async function fetchTides(s,from,to){
   s.tides=true;
   for(const [date,a] of by) s.tide[date]=Array.from({length:12},(_,k)=>{const v=[a[2*k],a[2*k+1]].filter(x=>x!=null); return v.length?Math.round(v.reduce((x,y)=>x+y,0)/v.length*100)/100:null});
 }
-// build the days the rest of the app uses: one model, or the equal-weight blend of the switched-on models
+// build the days the rest of the app uses: one model, or the weighted blend of the switched-on models
 function buildDays(s){
   const tideOf=date=>s.tide&&s.tide[date]||null;
   s.idx={}; for(const m of META.blend){ s.idx[m]=new Map((s.m[m]||[]).map(d=>[d[0],d])) }
@@ -1217,10 +1229,10 @@ function buildDays(s){
   const act=activeModels(), dates=new Set(); act.forEach(m=>(s.m[m]||[]).forEach(d=>dates.add(d[0])));
   const out=[];
   for(const date of [...dates].sort()){
-    const ds=act.map(m=>s.idx[m].get(date)).filter(Boolean); if(!ds.length) continue;
-    const avg=(k,round)=>Array.from({length:12},(_,i)=>{const v=ds.map(d=>d[k]&&d[k][i]).filter(x=>x!=null); return v.length?round(v.reduce((a,b)=>a+b,0)/v.length):null});
+    const dm=act.map(m=>[m,s.idx[m].get(date)]).filter(x=>x[1]); if(!dm.length) continue; const ds=dm.map(x=>x[1]), ws=dm.map(x=>mWt(x[0]));
+    const avg=(k,round)=>Array.from({length:12},(_,i)=>{let sv=0,sw=0; ds.forEach((d,j)=>{const v=d[k]&&d[k][i]; if(v!=null){sv+=v*ws[j]; sw+=ws[j]}}); return sw?round(sv/sw):null});
     const sp=avg(1,r1), gu=avg(4,r1), tp=avg(3,Math.round), cl=avg(7,Math.round);
-    const dr=Array.from({length:12},(_,i)=>{let sx=0,sy=0,n=0; ds.forEach(d=>{const a=d[2]&&d[2][i], w=d[1]&&d[1][i]; if(a!=null){const r=a*Math.PI/180, ww=Math.max(w??1,0.1); sx+=Math.sin(r)*ww; sy+=Math.cos(r)*ww; n++}}); return n?Math.round((Math.atan2(sx,sy)*180/Math.PI+360)%360):null});
+    const dr=Array.from({length:12},(_,i)=>{let sx=0,sy=0,n=0; ds.forEach((d,j)=>{const a=d[2]&&d[2][i], w=d[1]&&d[1][i]; if(a!=null){const r=a*Math.PI/180, ww=Math.max(w??1,0.1)*ws[j]; sx+=Math.sin(r)*ww; sy+=Math.cos(r)*ww; n++}}); return n?Math.round((Math.atan2(sx,sy)*180/Math.PI+360)%360):null});
     if(!sp.some(v=>v!=null)) continue;
     const fc=ds.some(d=>d[5])?1:0;
     out.push([date,sp,dr,tp,gu,fc,fc?'Combined':null,cl,tideOf(date),perModel(date),ds.length]);
@@ -1303,12 +1315,15 @@ function renderData(){
 function renderBlend(){
   const a=activeModels();
   $('blend').innerHTML=META.blend.map(m=>{const on=!META.off.includes(m);
-    return `<span class="bchip ${on?'on':''}"><button class="chip" data-bm="${m}" aria-pressed="${on}" title="${CAT[m].prov} · ${CAT[m].res} · archive from ${fmtDate(CAT[m].min)}"><i style="background:${modelColor(m)}"></i>${shortName(m)} <b>${on&&a.length?Math.round(100/a.length)+'%':'off'}</b></button>${DEFAULT_BLEND.includes(m)?'':`<button class="x" data-rmm="${m}" aria-label="Remove ${shortName(m)} from the blend">×</button>`}</span>`}).join('');
+    return `<span class="bchip ${on?'on':''}"><button class="chip" data-bm="${m}" aria-pressed="${on}" title="${CAT[m].prov} · ${CAT[m].res} · archive from ${fmtDate(CAT[m].min)}"><i style="background:${modelColor(m)}"></i>${shortName(m)} <b>${on&&a.length?pct(m):'off'}</b></button><label class="wt" title="Weight of ${shortName(m)} in the blend (1 = normal, 2 = counts twice as much)"><span>×</span><input type="number" data-wm="${m}" min="0.5" max="5" step="0.5" value="${mWt(m)}" ${on?'':'disabled'} aria-label="Weight of ${shortName(m)}"></label>${DEFAULT_BLEND.includes(m)?'':`<button class="x" data-rmm="${m}" aria-label="Remove ${shortName(m)} from the blend">×</button>`}</span>`}).join('');
   $('blend').querySelectorAll('[data-bm]').forEach(b=>b.onclick=()=>{const m=b.dataset.bm;
     META.off.includes(m)?META.off=META.off.filter(x=>x!==m):META.off.push(m);
     if(!activeModels().length){ META.off=META.off.filter(x=>x!==m); setStatus('At least one model has to stay switched on.') }
     saveStore(); renderBlend(); rebuildAll(); afterDataChange()});
-  $('blend').querySelectorAll('[data-rmm]').forEach(b=>b.onclick=()=>{const m=b.dataset.rmm; META.blend=META.blend.filter(x=>x!==m); META.off=META.off.filter(x=>x!==m);
+  $('blend').querySelectorAll('[data-wm]').forEach(inp=>inp.onchange=()=>{const m=inp.dataset.wm; let v=Math.round((+inp.value||1)*2)/2; v=Math.min(5,Math.max(0.5,v)); META.w=META.w||{}; if(v===1) delete META.w[m]; else META.w[m]=v;
+    saveStore(); renderBlend(); rebuildAll(); afterDataChange()});
+  $('wReset').hidden=equalW()&&!Object.keys(META.w||{}).length;
+  $('blend').querySelectorAll('[data-rmm]').forEach(b=>b.onclick=()=>{const m=b.dataset.rmm; META.blend=META.blend.filter(x=>x!==m); META.off=META.off.filter(x=>x!==m); if(META.w) delete META.w[m];
     if(META.view===m) META.view='combined'; for(const s of Object.values(SPOTS)) delete s.m[m]; saveStore(); renderBlend(); rebuildAll(); afterDataChange()});
   // add-model list
   const groups={}; CAT_ROWS.forEach(r=>{ if(META.blend.includes(r[1])) return; (groups[r[0]]=groups[r[0]]||[]).push(CAT[r[1]]) });
@@ -1316,7 +1331,7 @@ function renderBlend(){
   // view select
   $('view').innerHTML=`<option value="combined">Combined (weighted average)</option>`+META.blend.map(m=>`<option value="${m}">${shortName(m)} only${META.off.includes(m)?' (off in blend)':''}</option>`).join('');
   $('view').value=META.view;
-  $('viewHint').textContent=META.view==='combined'?`Average of ${a.map(shortName).join(', ')}, each ${Math.round(100/Math.max(1,a.length))}%. If a model has no data for a time, the others share its weight.`:`Only ${shortName(META.view)} is used for rideable days, charts and export.`;
+  $('viewHint').textContent=META.view==='combined'?`Weighted average of ${blendText()}. If a model has no data for a time, the others share its weight.`:`Only ${shortName(META.view)} is used for rideable days, charts and export.`;
 }
 function afterDataChange(){
   for(const k in SPOTS){ if(!st.dirs[k]) st.dirs[k]=new Set(SECT) }
@@ -1431,6 +1446,7 @@ function unitChips(){
 }
 $('minT').oninput=e=>{const v=+e.target.value;st.minT=v<=-10?null:v;$('minTOut').value=st.minT==null?'Any':st.minT;$('minTUnit').textContent=st.minT==null?'':'°C';update()};
 $('showAll').onchange=e=>{st.showAll=e.target.checked;st.limit=150;renderDays()};
+$('wReset').onclick=()=>{META.w={}; saveStore(); renderBlend(); rebuildAll(); afterDataChange()};
 try{ st.allDay=localStorage.getItem('lakewind-allday')==='1' }catch(e){} $('allDay').checked=st.allDay;
 $('allDay').onchange=e=>{st.allDay=e.target.checked; try{localStorage.setItem('lakewind-allday',st.allDay?'1':'0')}catch(err){} renderDays()};
 $('more').onclick=()=>{st.limit+=300;renderDays()};
