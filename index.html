@@ -146,6 +146,16 @@ tr.miss td{opacity:.35}
 #dirs{display:flex;flex-wrap:wrap;gap:14px 22px}
 .compass{display:grid;grid-template-columns:repeat(3,44px);gap:4px}
 .chip.dchip.any{font-size:12px;font-weight:600}
+.dirWrap{overflow-x:auto}
+.dirTbl{border-collapse:collapse}
+.dirTbl th{font:600 12px Barlow,sans-serif;color:var(--muted);padding:4px 2px;text-align:center}
+.dirTbl tbody th{text-align:left;color:var(--ink);font-size:14px;padding-right:10px;white-space:nowrap}
+.dirTbl td{padding:2px;text-align:center}
+.dirTbl .chip.dchip{width:36px;height:36px;border-radius:10px}
+.dirTbl .chip.dchip .da{width:18px;height:18px}
+.dirTbl .chip.dchip.any{width:44px}
+@media (max-width:560px){.dirTbl td{padding:1px}.dirTbl .chip.dchip{width:25px;height:32px;border-radius:7px}.dirTbl .chip.dchip .da{width:14px;height:14px}.dirTbl .chip.dchip.any{width:32px;font-size:11px}.dirTbl th{font-size:11px;padding:4px 0}.dirTbl tbody th{font-size:12px;padding-right:4px;white-space:normal;max-width:62px;line-height:1.15}}
+.dirTbl thead th:first-child{text-align:left}
 .dirRow b{font-weight:600;font-size:14px}
 .chip .da{width:12px;height:12px;vertical-align:-2px;margin-right:4px}
 .chip.dchip{width:44px;height:44px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:12px}
@@ -469,7 +479,7 @@ a{color:var(--sock)}
       </div>
     </div>
       <div class="dirBlock">
-      <span class="lbl">Wind direction per spot <span class="status" style="font-weight:400">(each button sits on the side the wind comes from, its arrow shows where it blows)</span></span>
+      <span class="lbl">Wind direction per spot <span class="status" style="font-weight:400">(columns are the directions the wind comes from; the arrow shows where it blows. Tap to pick one or more, or Any)</span></span>
       <div id="dirs"></div>
     </div>
   </details>
@@ -516,7 +526,7 @@ a{color:var(--sock)}
 </div></nav>
 
 <script>
-const APP_VERSION='3.17'; // app-<major>-<minor>; see the lake-wind-days-builds skill
+const APP_VERSION='3.18'; // app-<major>-<minor>; see the lake-wind-days-builds skill
 // ---- data store (Open-Meteo, cached in this browser)
 const DEFAULT_SPOTS={hlucin:{name:'Hlučín',lat:49.89,lon:18.17,tides:false},novemlyny:{name:'Nové Mlýny',lat:48.88,lon:16.68,tides:false},olesna:{name:'Olešná',lat:49.65,lon:18.30,tides:false}};
 // One catalogue for history (Historical Forecast API) and forecast (Forecast API).
@@ -903,9 +913,10 @@ const DEG={N:0,NE:45,E:90,SE:135,S:180,SW:225,W:270,NW:315};
 const chipArrow=s=>`<svg class="da" viewBox="0 0 100 100" aria-hidden="true"><g transform="rotate(${DEG[s]+180},50,50)"><path d="m50,4 -30,40 20,-5 -2,57 24,0 -2,-57 20,5z" fill="currentColor"/></g></svg>`;
 function dirChips(){
   const keys=Object.keys(SPOTS).filter(k=>st.spots.has(k));
-  $('dirs').innerHTML=keys.map(k=>{const set=st.dirs[k], all=set.size===8;
-    const btn=s=>`<button class="chip dchip" data-spot="${k}" data-v="${s}" aria-pressed="${!all&&set.has(s)}" title="Wind from ${s}" aria-label="Wind from ${s}">${chipArrow(s)}</button>`;
-    return `<div class="dirRow"><b>${SPOTS[k].name}</b><div class="compass" role="group" aria-label="Wind direction for ${SPOTS[k].name}">${btn('NW')}${btn('N')}${btn('NE')}${btn('W')}<button class="chip dchip any" data-spot="${k}" data-v="all" aria-pressed="${all}" title="Any direction">Any</button>${btn('E')}${btn('SW')}${btn('S')}${btn('SE')}</div></div>`}).join('');
+  const D=['N','NE','E','SE','S','SW','W','NW'];
+  $('dirs').innerHTML=`<div class="dirWrap"><table class="dirTbl"><thead><tr><th scope="col">Spot</th>${D.map(d=>`<th scope="col">${d}</th>`).join('')}<th scope="col">Any</th></tr></thead><tbody>`+keys.map(k=>{const set=st.dirs[k], all=set.size===8;
+    const btn=s=>`<td><button class="chip dchip" data-spot="${k}" data-v="${s}" aria-pressed="${!all&&set.has(s)}" title="${SPOTS[k].name}: wind from ${s}" aria-label="${SPOTS[k].name}: wind from ${s}">${chipArrow(s)}</button></td>`;
+    return `<tr><th scope="row">${SPOTS[k].name}</th>${D.map(btn).join('')}<td><button class="chip dchip any" data-spot="${k}" data-v="all" aria-pressed="${all}" title="${SPOTS[k].name}: any direction">Any</button></td></tr>`}).join('')+`</tbody></table></div>`;
   $('dirs').querySelectorAll('button').forEach(b=>b.onclick=()=>{
     const k=b.dataset.spot, s=b.dataset.v; let set=st.dirs[k];
     if(s==='all') SECT.forEach(x=>set.add(x));
