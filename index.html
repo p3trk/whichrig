@@ -252,7 +252,15 @@ body:not(.on-next) #seasonNote{display:none}
 .qchip .gi{width:1.9em;height:1.9em;margin-right:2px}
 .qchip .qt{display:flex;flex-direction:column;align-items:flex-start;line-height:1.1}
 .qchip .qt small{font-size:11px}
-.qchip{min-height:38px;padding:3px 7px 3px 5px}
+.qchip{min-height:34px;padding:2px 6px 2px 3px}
+.qchip .gi{width:1.7em;height:1.7em}
+.qchip .qt span{font-size:12.5px}
+.qchip .qt small{font-size:10.5px}
+.nextTop{display:flex;gap:14px;align-items:flex-start;justify-content:space-between;margin-bottom:14px}
+.nextTop .hero{flex:1 1 auto;min-width:0;margin:0}
+.nextTop .qchips{flex:0 0 auto;margin:6px 0 0;padding:0;align-items:flex-start}
+.nextTop .qrow{overflow:visible;flex-wrap:wrap;max-width:262px}
+@media (max-width:540px){.nextTop{flex-direction:column;gap:10px}.nextTop .qchips{margin:0}.nextTop .qrow{max-width:none;flex-wrap:nowrap;overflow-x:auto}}
 .dcards{display:flex;flex-direction:column;gap:10px}
 .dcard{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;width:100%;text-align:left;font:inherit;color:inherit;cursor:pointer;transition:border-color .15s,box-shadow .15s}
 .dcard:hover{border-color:var(--muted)}
@@ -317,8 +325,8 @@ body:not(.on-next) #seasonNote{display:none}
   <p class="sub" id="sub" hidden></p>
 
   <section class="tab" id="tab-next" aria-label="Next days">
-    <div class="hero"><div class="hbig" id="nextBig"></div><div class="small" id="nextSmall"></div></div>
-    <div class="qchips" id="qchips" role="group" aria-label="Your gear: switch it on or off"></div>
+    <div class="nextTop"><div class="hero"><div class="hbig" id="nextBig"></div><div class="small" id="nextSmall"></div></div>
+    <div class="qchips" id="qchips" role="group" aria-label="Your gear: switch it on or off"></div></div>
     <div class="dcards" id="dcards"></div>
     <p class="hint" style="margin-top:12px">Ride: at least one gear works for the chosen number of hours. Maybe: a gear works, but for less time. Squares show how many models agree with the verdict. Filters for hours, temperature and direction are under Spots.</p>
   </section>
@@ -539,7 +547,7 @@ body:not(.on-next) #seasonNote{display:none}
 </div></nav>
 
 <script>
-const APP_VERSION='3.22'; // app-<major>-<minor>; see the lake-wind-days-builds skill
+const APP_VERSION='3.23'; // app-<major>-<minor>; see the lake-wind-days-builds skill
 // ---- data store (Open-Meteo, cached in this browser)
 const DEFAULT_SPOTS={hlucin:{name:'Hlučín',lat:49.89,lon:18.17,tides:false},novemlyny:{name:'Nové Mlýny',lat:48.88,lon:16.68,tides:false},olesna:{name:'Olešná',lat:49.65,lon:18.30,tides:false}};
 // One catalogue for history (Historical Forecast API) and forecast (Forecast API).
@@ -1058,7 +1066,7 @@ function renderNext(){
   // quiver chips
   st.gear.forEach(g=>{ if(g.pinned===undefined) g.pinned=g.on });
   $('qchips').innerHTML=st.prio.map(t=>st.gear.filter(g=>g.type===t&&(g.on||g.pinned)).sort((a,b)=>a.size-b.size)).filter(r=>r.length).map(r=>`<div class="qrow">${r.map(g=>{const c=gearColor(g), [lo,hi]=gearRange(g);
-    return `<button type="button" class="qchip ${g.on?'on':'faded'}" data-gid="${g.id}" aria-pressed="${g.on}" title="${gearLabel(g)}: works from ${toU(lo)} to ${toU(hi)} ${UL()}. ${g.on?'Tap to leave out':'Tap to use again'}" style="background:${c};border-color:${c};color:${textOn(c)}">${gearIcon(g.type)}<span class="qt"><span>${g.size} m²</span><small>≥ ${toU(lo)} ${UL()}</small></span></button>`}).join('')}</div>`).join('');
+    return `<button type="button" class="qchip ${g.on?'on':'faded'}" data-gid="${g.id}" aria-pressed="${g.on}" title="${gearLabel(g)}: works from ${toU(lo)} to ${toU(hi)} ${UL()}. ${g.on?'Tap to leave out':'Tap to use again'}" style="background:${c};border-color:${c};color:${textOn(c)}">${gearIcon(g.type)}<span class="qt"><span>${g.size}</span><small>≥${toU(lo)} ${UL()}</small></span></button>`}).join('')}</div>`).join('');
   $('qchips').querySelectorAll('[data-gid]').forEach(b=>b.onclick=()=>{const g=st.gear.find(x=>x.id==b.dataset.gid); g.on=!g.on; g.pinned=true; renderGear(); update(); const nb=document.querySelector(`[data-gid="${g.id}"]`); nb&&nb.focus()});
   if(!dates.length){ $('nextBig').textContent='No forecast yet'; $('nextSmall').textContent='Open Spots and press "Download all spots".';
     $('dcards').innerHTML='<div class="empty2">Forecast days appear here after the first download.</div>'; return }
