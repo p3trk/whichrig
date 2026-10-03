@@ -171,7 +171,10 @@ tr.miss td{opacity:.35}
 .bchip .chip i,.mcov i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:0}
 .bchip .chip b{font-weight:700;margin-left:4px}
 .bchip .wt{display:inline-flex;align-items:center;margin-left:3px;font-size:12px;color:var(--muted)}
-.bchip .wt input{width:40px;padding:3px 2px;font:600 13px Barlow,sans-serif;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--ink);margin-left:1px}
+.bchip .wt input[type=range]{width:110px;margin:0 6px;accent-color:var(--sock)}
+.bchip .wt output{min-width:30px;font:600 13px Barlow,sans-serif;color:var(--ink)}
+#blend{flex-direction:column;align-items:flex-start;gap:6px}
+.bchip .chip{min-width:118px;text-align:left}
 .bchip:not(.on) .wt{opacity:.5}
 #wReset[hidden]{display:none}
 .bchip:not(.on) .chip{opacity:.6;text-decoration:line-through}
@@ -389,7 +392,7 @@ a{color:var(--sock)}
     <summary><h2 id="h-data">Wind data</h2><span class="psum" id="s-data"></span></summary>
     <div class="cols">
       <div style="grid-column:span 2">
-        <span class="lbl" id="blendLbl">Model blend <span class="status" style="font-weight:400">(all are downloaded; switch one off to leave it out of the average, or change its weight ×0.5–×5)</span></span>
+        <span class="lbl" id="blendLbl">Model blend <span class="status" style="font-weight:400">(all are downloaded; switch one off to leave it out of the average, or slide its weight ×0.5–×5)</span></span>
         <div class="row" id="blend" role="group" aria-labelledby="blendLbl"></div>
         <button class="btn ghost" id="wReset" type="button" style="margin-top:8px;padding:4px 10px" hidden>Equal weights</button>
         <div class="row" style="margin-top:8px;flex-wrap:nowrap">
@@ -513,7 +516,7 @@ a{color:var(--sock)}
 </div></nav>
 
 <script>
-const APP_VERSION='3.15'; // app-<major>-<minor>; see the lake-wind-days-builds skill
+const APP_VERSION='3.16'; // app-<major>-<minor>; see the lake-wind-days-builds skill
 // ---- data store (Open-Meteo, cached in this browser)
 const DEFAULT_SPOTS={hlucin:{name:'Hlučín',lat:49.89,lon:18.17,tides:false},novemlyny:{name:'Nové Mlýny',lat:48.88,lon:16.68,tides:false},olesna:{name:'Olešná',lat:49.65,lon:18.30,tides:false}};
 // One catalogue for history (Historical Forecast API) and forecast (Forecast API).
@@ -1315,13 +1318,16 @@ function renderData(){
 function renderBlend(){
   const a=activeModels();
   $('blend').innerHTML=META.blend.map(m=>{const on=!META.off.includes(m);
-    return `<span class="bchip ${on?'on':''}"><button class="chip" data-bm="${m}" aria-pressed="${on}" title="${CAT[m].prov} · ${CAT[m].res} · archive from ${fmtDate(CAT[m].min)}"><i style="background:${modelColor(m)}"></i>${shortName(m)} <b>${on&&a.length?pct(m):'off'}</b></button><label class="wt" title="Weight of ${shortName(m)} in the blend (1 = normal, 2 = counts twice as much)"><span>×</span><input type="number" data-wm="${m}" min="0.5" max="5" step="0.5" value="${mWt(m)}" ${on?'':'disabled'} aria-label="Weight of ${shortName(m)}"></label>${DEFAULT_BLEND.includes(m)?'':`<button class="x" data-rmm="${m}" aria-label="Remove ${shortName(m)} from the blend">×</button>`}</span>`}).join('');
+    return `<span class="bchip ${on?'on':''}"><button class="chip" data-bm="${m}" aria-pressed="${on}" title="${CAT[m].prov} · ${CAT[m].res} · archive from ${fmtDate(CAT[m].min)}"><i style="background:${modelColor(m)}"></i>${shortName(m)} <b>${on&&a.length?pct(m):'off'}</b></button><label class="wt" title="Weight of ${shortName(m)} in the blend (1 = normal, 2 = counts twice as much)"><input type="range" data-wm="${m}" min="0.5" max="5" step="0.5" value="${mWt(m)}" ${on?'':'disabled'} aria-label="Weight of ${shortName(m)}"><output data-wo="${m}">×${mWt(m)}</output></label>${DEFAULT_BLEND.includes(m)?'':`<button class="x" data-rmm="${m}" aria-label="Remove ${shortName(m)} from the blend">×</button>`}</span>`}).join('');
   $('blend').querySelectorAll('[data-bm]').forEach(b=>b.onclick=()=>{const m=b.dataset.bm;
     META.off.includes(m)?META.off=META.off.filter(x=>x!==m):META.off.push(m);
     if(!activeModels().length){ META.off=META.off.filter(x=>x!==m); setStatus('At least one model has to stay switched on.') }
     saveStore(); renderBlend(); rebuildAll(); afterDataChange()});
-  $('blend').querySelectorAll('[data-wm]').forEach(inp=>inp.onchange=()=>{const m=inp.dataset.wm; let v=Math.round((+inp.value||1)*2)/2; v=Math.min(5,Math.max(0.5,v)); META.w=META.w||{}; if(v===1) delete META.w[m]; else META.w[m]=v;
-    saveStore(); renderBlend(); rebuildAll(); afterDataChange()});
+  const setW=inp=>{const m=inp.dataset.wm; let v=Math.round((+inp.value||1)*2)/2; v=Math.min(5,Math.max(0.5,v)); META.w=META.w||{}; if(v===1) delete META.w[m]; else META.w[m]=v;
+    $('blend').querySelector(`[data-wo="${m}"]`).textContent='×'+v;
+    $('blend').querySelectorAll('[data-bm]').forEach(b=>{const x=b.dataset.bm, k=b.querySelector('b'); if(k&&!META.off.includes(x)) k.textContent=pct(x)})};
+  $('blend').querySelectorAll('[data-wm]').forEach(inp=>{ inp.oninput=()=>setW(inp);
+    inp.onchange=()=>{setW(inp); saveStore(); renderBlend(); rebuildAll(); afterDataChange()} });
   $('wReset').hidden=equalW()&&!Object.keys(META.w||{}).length;
   $('blend').querySelectorAll('[data-rmm]').forEach(b=>b.onclick=()=>{const m=b.dataset.rmm; META.blend=META.blend.filter(x=>x!==m); META.off=META.off.filter(x=>x!==m); if(META.w) delete META.w[m];
     if(META.view===m) META.view='combined'; for(const s of Object.values(SPOTS)) delete s.m[m]; saveStore(); renderBlend(); rebuildAll(); afterDataChange()});
