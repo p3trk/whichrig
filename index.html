@@ -233,13 +233,15 @@ a{color:var(--sock)}
 .hero .hbig{font:700 40px/1.05 "Barlow Semi Condensed",Barlow,sans-serif;letter-spacing:-.02em}
 .hero .hbig span{display:block;color:var(--muted);font-weight:600;font-size:.5em;letter-spacing:0;margin-top:2px}
 .hero .small{font-size:14px;color:var(--muted)}
-.qchips{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-bottom:14px;scrollbar-width:none}
-.qchip{min-height:44px;padding:0 14px;border-radius:999px;border:2px solid var(--line);background:transparent;color:var(--muted);font:600 14px Barlow,sans-serif;white-space:nowrap;cursor:pointer;display:flex;align-items:center;gap:6px}
+.qchips{display:flex;gap:5px;overflow-x:auto;padding-bottom:4px;margin-bottom:14px;scrollbar-width:none}
+.qchip{min-height:32px;padding:0 7px 0 5px;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--muted);font:600 13px Barlow,sans-serif;white-space:nowrap;cursor:pointer;display:flex;align-items:center;gap:6px}
 .qchip.on{color:#fff}
 .qchip.faded{opacity:.35;filter:saturate(.4);transition:opacity .2s}
 .qchip.faded:hover{opacity:.6}
 .qchip{transition:opacity .2s}
-.qchip small{font-weight:500;opacity:.85;font-size:12px}
+.qchip small{font-weight:500;opacity:.9;font-size:12px}
+.qchip{gap:3px}
+.qchip .gi{width:1.6em;height:1.6em;margin-right:1px}
 .dcards{display:flex;flex-direction:column;gap:10px}
 .dcard{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;width:100%;text-align:left;font:inherit;color:inherit;cursor:pointer;transition:border-color .15s,box-shadow .15s}
 .dcard:hover{border-color:var(--muted)}
@@ -526,7 +528,7 @@ a{color:var(--sock)}
 </div></nav>
 
 <script>
-const APP_VERSION='3.18'; // app-<major>-<minor>; see the lake-wind-days-builds skill
+const APP_VERSION='3.19'; // app-<major>-<minor>; see the lake-wind-days-builds skill
 // ---- data store (Open-Meteo, cached in this browser)
 const DEFAULT_SPOTS={hlucin:{name:'Hlučín',lat:49.89,lon:18.17,tides:false},novemlyny:{name:'Nové Mlýny',lat:48.88,lon:16.68,tides:false},olesna:{name:'Olešná',lat:49.65,lon:18.30,tides:false}};
 // One catalogue for history (Historical Forecast API) and forecast (Forecast API).
@@ -1045,7 +1047,7 @@ function renderNext(){
   // quiver chips
   st.gear.forEach(g=>{ if(g.pinned===undefined) g.pinned=g.on });
   $('qchips').innerHTML=st.gear.filter(g=>g.on||g.pinned).map(g=>{const c=gearColor(g), [lo,hi]=gearRange(g);
-    return `<button type="button" class="qchip ${g.on?'on':'faded'}" data-gid="${g.id}" aria-pressed="${g.on}" title="${g.on?'Tap to leave out':'Tap to use again'}" style="background:${c};border-color:${c};color:${textOn(c)}">${gearShort(g)} <small>${toU(lo)}–${toU(hi)} ${UL()}</small></button>`}).join('');
+    return `<button type="button" class="qchip ${g.on?'on':'faded'}" data-gid="${g.id}" aria-pressed="${g.on}" title="${gearLabel(g)}: works from ${toU(lo)} to ${toU(hi)} ${UL()}. ${g.on?'Tap to leave out':'Tap to use again'}" style="background:${c};border-color:${c};color:${textOn(c)}">${gearIcon(g.type)}${g.size} m² <small>≥ ${toU(lo)} ${UL()}</small></button>`}).join('');
   $('qchips').querySelectorAll('[data-gid]').forEach(b=>b.onclick=()=>{const g=st.gear.find(x=>x.id==b.dataset.gid); g.on=!g.on; g.pinned=true; renderGear(); update(); const nb=document.querySelector(`[data-gid="${g.id}"]`); nb&&nb.focus()});
   if(!dates.length){ $('nextBig').textContent='No forecast yet'; $('nextSmall').textContent='Open Spots and press "Download all spots".';
     $('dcards').innerHTML='<div class="empty2">Forecast days appear here after the first download.</div>'; return }
