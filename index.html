@@ -547,7 +547,7 @@ body:not(.on-next) #seasonNote{display:none}
 </div></nav>
 
 <script>
-const APP_VERSION='3.24'; // app-<major>-<minor>; see the lake-wind-days-builds skill
+const APP_VERSION='3.25'; // app-<major>-<minor>; see the lake-wind-days-builds skill
 // ---- data store (Open-Meteo, cached in this browser)
 const DEFAULT_SPOTS={hlucin:{name:'Hlučín',lat:49.89,lon:18.17,tides:false},novemlyny:{name:'Nové Mlýny',lat:48.88,lon:16.68,tides:false},olesna:{name:'Olešná',lat:49.65,lon:18.30,tides:false}};
 // One catalogue for history (Historical Forecast API) and forecast (Forecast API).
@@ -704,7 +704,9 @@ function loadGear(){
   }catch(e){}
 }
 const st={
-  spots:new Set(Object.keys(SPOTS)),
+  spots:(()=>{ // spots switched off are remembered in this browser; new spots start switched on
+    let off=[]; try{ off=JSON.parse(localStorage.getItem('lakewind-spots-off')||'[]') }catch(e){}
+    const on=Object.keys(SPOTS).filter(k=>!off.includes(k)); return new Set(on.length?on:Object.keys(SPOTS)) })(),
   knownYears:new Set(),
   mFrom:4,mTo:8,years:new Set(),
   prio:['fin','wingfoil','windfoil'],
@@ -1165,7 +1167,8 @@ function showTab(id){
   window.scrollTo(0,0);
 }
 document.querySelectorAll('.tabbar [data-tab]').forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
-function update(){ st.limit=150; compute(); renderSummary(); renderDays(); renderCoverage(); renderNext(); renderCalendar(); renderWhen(); panelSums();}
+function saveSpotsOff(){ try{ localStorage.setItem('lakewind-spots-off',JSON.stringify(Object.keys(SPOTS).filter(k=>!st.spots.has(k)))) }catch(e){} }
+function update(){ saveSpotsOff(); st.limit=150; compute(); renderSummary(); renderDays(); renderCoverage(); renderNext(); renderCalendar(); renderWhen(); panelSums();}
 
 // CSV
 function csvCell(v){ if(v==null) return ''; const s=String(v); return /[",\n;]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; }
