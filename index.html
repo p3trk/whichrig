@@ -313,6 +313,32 @@ body:not(.on-next) #seasonNote{display:none}
 #covChart .binOff{fill:var(--muted);opacity:.35}
 #covChart .track{fill:var(--soft)}
 
+
+/* phones: everything fits the screen width */
+.cols>*{min-width:0}
+@media (max-width:560px){
+  .cols{grid-template-columns:1fr}
+  .cols>*{grid-column:auto!important}
+  .scroll .gearTbl,.scroll .gearTbl tbody{display:block;width:100%}
+  .gearTbl thead{display:none}
+  .gearTbl tr{display:flex;flex-wrap:wrap;align-items:flex-end;gap:8px 10px;padding:10px 0;border-top:1px solid var(--line);position:relative}
+  .gearTbl td{display:flex;flex-direction:column;gap:2px;padding:0;white-space:normal}
+  .gearTbl td[data-l]::before{content:attr(data-l);font:600 11px Barlow,sans-serif;color:var(--muted)}
+  .gearTbl td.use{align-self:center}
+  .gearTbl td.del{position:absolute;top:8px;right:0}
+  .gearTbl td:nth-child(2){flex-direction:row;flex-wrap:wrap;align-items:center;gap:4px}
+  .gearTbl td:nth-child(2)::before{flex-basis:100%}
+  .gearTbl tr.off td:not(:first-child){opacity:.45}
+  .dataTbl{min-width:0;display:block}
+  .dataTbl tbody{display:block}
+  .dataTbl tr:first-child{display:none}
+  .dataTbl tr{display:flex;flex-wrap:wrap;gap:4px 14px;padding:8px 0;border-top:1px solid var(--line)}
+  .dataTbl td{display:block;border:0;padding:0}
+  .dataTbl td:first-child{flex-basis:100%}
+  .dataTbl select.msel{width:100%;max-width:240px}
+  #addModel{max-width:none!important;width:100%!important;min-width:0}
+  .row:has(> #addModel){flex-wrap:wrap!important}
+}
 </style>
 </head>
 <body>
@@ -547,7 +573,7 @@ body:not(.on-next) #seasonNote{display:none}
 </div></nav>
 
 <script>
-const APP_VERSION='3.25'; // app-<major>-<minor>; see the lake-wind-days-builds skill
+const APP_VERSION='3.26'; // app-<major>-<minor>; see the lake-wind-days-builds skill
 // ---- data store (Open-Meteo, cached in this browser)
 const DEFAULT_SPOTS={hlucin:{name:'Hlučín',lat:49.89,lon:18.17,tides:false},novemlyny:{name:'Nové Mlýny',lat:48.88,lon:16.68,tides:false},olesna:{name:'Olešná',lat:49.65,lon:18.30,tides:false}};
 // One catalogue for history (Historical Forecast API) and forecast (Forecast API).
@@ -892,17 +918,17 @@ function renderGear(){
   $('gearBody').innerHTML=st.gear.map(g=>{const [lo,hi]=gearRange(g), c=calcGear(g), T=TYPES[g.type], dis=T.foil?'':'disabled';
     const warn=c.warn.length?`<span class="warn" title="${c.warn.join(' ')}" aria-label="${c.warn.join(' ')}">⚠</span>`:'';
     return `<tr class="${g.on?'':'off'}" data-id="${g.id}">
-    <td><input type="checkbox" data-k="on" ${g.on?'checked':''} aria-label="Use ${gearLabel(g)}"></td>
-    <td><span class="swatch" style="background:${gearColor(g)}"></span><select data-k="type" aria-label="Type">${Object.entries(TYPES).map(([k,x])=>`<option value="${k}" ${k===g.type?'selected':''}>${x.name}</option>`).join('')}</select></td>
-    <td><input class="w" type="number" data-k="size" min="1" max="14" step="0.1" value="${g.size}" aria-label="Rig size in square metres"></td>
-    <td><input class="w" type="number" data-k="board" min="20" max="300" step="5" value="${g.board}" aria-label="Board volume in litres"></td>
-    <td><input class="w" type="number" data-k="gearKg" min="0" max="40" step="1" value="${g.gearKg}" aria-label="Gear weight in kg"></td>
-    <td>${T.foil?`<input class="w" type="number" data-k="foil" min="300" max="3500" step="50" value="${g.foil}" aria-label="Front wing area in square centimetres">`:'<span class="status">–</span>'}</td>
-    <td>${T.foil?`<select class="sm" data-k="ar" aria-label="Front wing shape">${Object.entries(AR).map(([k,a])=>`<option value="${k}" ${k===g.ar?'selected':''}>${a.name}</option>`).join('')}</select>`:'<span class="status">–</span>'}</td>
-    <td><div class="rng"><input class="w" type="number" data-k="low" min="0.5" max="60" step="${st.unit==='kt'?0.5:0.1}" value="${toU(lo)}" aria-label="Lowest wind in ${UL()}"> – <input class="w" type="number" data-k="high" min="0.5" max="60" step="${st.unit==='kt'?0.5:0.1}" value="${toU(hi)}" aria-label="Highest wind in ${UL()}">
+    <td class="use"><input type="checkbox" data-k="on" ${g.on?'checked':''} aria-label="Use ${gearLabel(g)}"></td>
+    <td data-l="Type"><span class="swatch" style="background:${gearColor(g)}"></span><select data-k="type" aria-label="Type">${Object.entries(TYPES).map(([k,x])=>`<option value="${k}" ${k===g.type?'selected':''}>${x.name}</option>`).join('')}</select></td>
+    <td data-l="Rig m²"><input class="w" type="number" data-k="size" min="1" max="14" step="0.1" value="${g.size}" aria-label="Rig size in square metres"></td>
+    <td data-l="Board L"><input class="w" type="number" data-k="board" min="20" max="300" step="5" value="${g.board}" aria-label="Board volume in litres"></td>
+    <td data-l="Gear kg"><input class="w" type="number" data-k="gearKg" min="0" max="40" step="1" value="${g.gearKg}" aria-label="Gear weight in kg"></td>
+    <td data-l="Front wing cm²">${T.foil?`<input class="w" type="number" data-k="foil" min="300" max="3500" step="50" value="${g.foil}" aria-label="Front wing area in square centimetres">`:'<span class="status">–</span>'}</td>
+    <td data-l="Front wing shape">${T.foil?`<select class="sm" data-k="ar" aria-label="Front wing shape">${Object.entries(AR).map(([k,a])=>`<option value="${k}" ${k===g.ar?'selected':''}>${a.name}</option>`).join('')}</select>`:'<span class="status">–</span>'}</td>
+    <td data-l="Wind range (${UL()})"><div class="rng"><input class="w" type="number" data-k="low" min="0.5" max="60" step="${st.unit==='kt'?0.5:0.1}" value="${toU(lo)}" aria-label="Lowest wind in ${UL()}"> – <input class="w" type="number" data-k="high" min="0.5" max="60" step="${st.unit==='kt'?0.5:0.1}" value="${toU(hi)}" aria-label="Highest wind in ${UL()}">
       ${g.manual?`<button class="x" data-k="reset" title="Back to automatic range" aria-label="Reset range">↺</button>`:'<span class="auto">auto</span>'}${warn}</div></td>
-    <td class="vto">${T.foil?toU(half(c.stay)):'<span class="status">–</span>'}</td><td class="vto">${T.foil?toU(c.vto):'<span class="status">–</span>'}</td>
-    <td><button class="x" data-k="del" aria-label="Remove ${gearLabel(g)}">×</button></td></tr>`}).join('');
+    <td class="vto" data-l="Stay-up (${UL()})">${T.foil?toU(half(c.stay)):'<span class="status">–</span>'}</td><td class="vto" data-l="Foil lifts (${UL()})">${T.foil?toU(c.vto):'<span class="status">–</span>'}</td>
+    <td class="del"><button class="x" data-k="del" aria-label="Remove ${gearLabel(g)}">×</button></td></tr>`}).join('');
 }
 $('gearBody').addEventListener('change',e=>{
   const tr=e.target.closest('tr'); if(!tr) return; const g=st.gear.find(x=>x.id==tr.dataset.id); const k=e.target.dataset.k;
