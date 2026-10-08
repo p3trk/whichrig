@@ -349,6 +349,41 @@ body:not(.on-next) #seasonNote{display:none}
   #addModel{max-width:none!important;width:100%!important;min-width:0}
   .row:has(> #addModel){flex-wrap:wrap!important}
 }
+
+/* Season: compact day list, all hours fit an upright phone */
+.sdays{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:4px 10px 8px;font-variant-numeric:tabular-nums}
+.shrs{display:grid;gap:2px;position:sticky;top:0;z-index:3;background:var(--panel);padding:6px 0 4px;font:600 10.5px Barlow,sans-serif;color:var(--muted);text-align:center;border-bottom:1px solid var(--line)}
+.sday{padding:8px 0 6px;border-top:1px solid var(--line)}
+.shrs+.sday{border-top:0}
+.sday.offs{background-image:repeating-linear-gradient(135deg,transparent 0 6px,color-mix(in srgb,var(--muted) 8%,transparent) 6px 12px);margin:0 -10px;padding-left:10px;padding-right:10px}
+.sdh{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;margin-bottom:4px}
+.sdh b{font:700 16px "Barlow Semi Condensed",Barlow,sans-serif}
+.sdh small{color:var(--muted);font-size:12px}
+.sdh .fc,.sdh .srctag{margin-left:2px}
+.sspot{padding:3px 0 5px}
+.sspot+.sspot{border-top:1px dashed color-mix(in srgb,var(--line) 80%,transparent)}
+.ssh{display:flex;align-items:center;gap:6px;width:100%;margin:0 0 4px;padding:2px 0;background:none;border:0;border-radius:6px;text-align:left;font:inherit;color:inherit;cursor:pointer}
+.ssh.xbtn,.ssh.xbtn:hover,.ssh.xbtn[aria-expanded=true]{border:0;margin-top:0;color:inherit}
+.ssh .ssn{font-weight:600;font-size:14px;white-space:nowrap}
+.ssh .ssn:empty{display:none}
+.ssh .vpill{font-size:10.5px;padding:2px 6px;border-radius:5px;flex:none}
+.ssh .pills{display:flex;flex-wrap:wrap;gap:3px;flex:1;min-width:0}
+.ssh .pill{font-size:12px;padding:2px 5px 2px 3px}
+.ssh .pill .gi{width:1.6em;height:1.6em;margin-right:2px}
+.ssh .car{margin-left:auto;color:var(--muted);font-size:12px;flex:none}
+.ssh:focus-visible{outline:2px solid var(--sock);outline-offset:1px}
+.scells{display:grid;gap:2px}
+.scells .cell{min-width:0;height:34px;font-size:12.5px;font-weight:700;border-radius:5px}
+.scells .cell svg{width:10px;height:10px}
+.sspot.miss .scells .cell{filter:saturate(.6)}
+.sspot.focus{background:color-mix(in srgb,var(--sock) 8%,transparent);box-shadow:inset 3px 0 0 var(--sock);margin:0 -10px;padding-left:10px;padding-right:10px}
+.sdet{margin-top:4px}
+.slab{font-size:11px;color:var(--muted);margin:4px 0 1px;display:flex;align-items:center;gap:4px}
+.slab i{display:inline-block;width:8px;height:8px;border-radius:2px}
+.mini-row .mini{min-width:0;height:18px;font-size:10.5px}
+.mini-row.moff .mini{opacity:.35}
+.sdays .empty{color:var(--muted);padding:14px 4px;margin:0}
+@media (max-width:380px){.scells .cell{font-size:11.5px}.mini-row .mini{font-size:9.5px}}
 </style>
 </head>
 <body>
@@ -390,7 +425,7 @@ body:not(.on-next) #seasonNote{display:none}
 
   <div class="row" style="margin:0 0 8px;gap:6px"><span class="lbl" id="layLbl" style="display:none">Details include</span><div class="row" id="layers" role="group" aria-labelledby="layLbl" style="display:none"></div>
     <span style="flex:1"></span><button class="btn ghost" id="expAll" style="padding:4px 10px">Expand all</button><button class="btn ghost" id="colAll" style="padding:4px 10px">Collapse all</button></div>
-  <div class="grid"><table class="days" id="tbl"></table></div>
+  <div class="sdays" id="tbl"></div>
   <button class="btn ghost more" id="more" hidden>Show more days</button>
 
   <p class="foot">Data: Open-Meteo (hourly, averaged into 2-hour steps; gusts are the 2-hour maximum). These are modelled winds, not station readings, so real gusts and lulls on the lakes can differ. A day matches when, for at least one gear in use, the wind stays inside that gear's range, from a selected direction and at or above the minimal temperature, for the chosen number of consecutive hours inside the chosen time of day. Underlined cells are the ones that count. Gear ranges are rough estimates scaled from rider weight and size; adjust them to match your own experience.</p>
@@ -583,7 +618,7 @@ body:not(.on-next) #seasonNote{display:none}
 </div></nav>
 
 <script>
-const APP_VERSION='3.28'; // app-<major>-<minor>; see the lake-wind-days-builds skill
+const APP_VERSION='3.29'; // app-<major>-<minor>; see the lake-wind-days-builds skill
 // ---- data store (Open-Meteo, cached in this browser)
 const DEFAULT_SPOTS={hlucin:{name:'Hlučín',lat:49.89,lon:18.17,tides:false},novemlyny:{name:'Nové Mlýny',lat:48.88,lon:16.68,tides:false},olesna:{name:'Olešná',lat:49.65,lon:18.30,tides:false}};
 // One catalogue for history (Historical Forecast API) and forecast (Forecast API).
@@ -903,21 +938,37 @@ function renderDays(){
   const L=st.layers, win=i=>HOURS[i]>=st.hFrom&&HOURS[i]<=st.hTo;
   const vis=HOURS.map((h,i)=>st.allDay||win(i)), nVis=vis.filter(Boolean).length, V=a=>a.filter((_,i)=>vis[i]);
   const tcol=v=>v==null?'transparent':v>=25?'#F6B48F':v>=18?'#FAD7A8':v>=10?'#F3EBC8':v>=0?'#D6E8F3':'#B7D2EE';
-  const subRow=(cls,lab,cells)=>`<tr class="sub ${cls}"><td class="lab">${lab}</td>${V(cells).join('')}</tr>`;
-  const head=`<tr><th>Day</th>${V(HOURS).map(h=>`<th>${String(h).padStart(2,'0')}</th>`).join('')}</tr>`;
-  if(!shown.length){$('tbl').innerHTML=head+`<tr><td colspan="${nVis+1}" class="empty">No rideable days with these settings. Add larger gear, lower the minimal temperature, widen the time of day, or shorten the duration.</td></tr>`;$('more').hidden=true;return}
-  $('tbl').style.minWidth=(200+nVis*52)+'px';
-  $('tbl').innerHTML=head+shown.slice(0,st.limit).map(({spot,d,r})=>{
-    const [date,sp,dr,tp,gu,fc]=d;
-    const xk=spot+'|'+date, open=st.expandAll||st.expanded.has(xk), hasL=[...L].some(k=>k==='tide'?d[8]:k==='models'?d[9]:true);
-    const offS=!inSeason(date);
-    return `<tr class="${r.match?'':'miss'} ${date===st.focusDate&&spot===st.focusSpot?'focus':''} ${offS?'offs':''}" id="row-${spot}-${date}"><td class="d">${fmtDate(date)}${offS?'<em class="offtag">off-season</em>':''}${fc?`<span class="fc" title="Forecast: ${viewLabel()}">forecast · ${d[6]||''}</span>`:`<span class="srctag" title="${viewLabel()}">${META.view==='combined'?'combined'+(d[10]&&d[10]<activeModels().length?` ${d[10]}/${activeModels().length}`:''):shortName(META.view)}</span>`}<small>${wd(date)}${multi?' · '+SPOTS[spot].name:''}</small>${(()=>{const pills=r.works.length?(ws=>ws.slice(0,3).map(w=>`<span class="pill" style="background:${gearColor(w.g)};color:${textOn(gearColor(w.g))}" title="${gearLabel(w.g)}: ${w.hours} h in range">${gearShort(w.g)}</span>`).join('')+(ws.length>3?`<span class="pill plus" title="Also works: ${ws.slice(3).map(w=>gearLabel(w.g)+' ('+w.hours+' h)').join(', ')}">+${ws.length-3}</span>`:''))(r.works.slice().sort((a,b)=>prefCmp(a.g,b.g))):'<span class="pill none">no gear</span>'; return hasL?`<button class="xbtn gx" data-x="${xk}" aria-expanded="${open}" aria-label="${open?'Hide':'Show'} details for ${fmtDate(date)}"><span class="pills">${pills}</span><span class="car">${open?'▾':'▸'}</span></button>`:`<span class="pills gx">${pills}</span>`})()}</td>${sp.map((v,i)=>`<td><div class="cell ${r.inWin[i]?'':'out'} ${r.hit.has(i)?'hit':''}" style="background:${color(v)};color:${colorFg(v)}" title="${String(HOURS[i]).padStart(2,'0')}h: ${fmtW(v)} ${UL()}${dr[i]!=null?' from '+sector(dr[i])+' ('+dr[i]+'°)':''}${gu&&gu[i]!=null?', gusts '+fmtW(gu[i])+' '+UL():''}${tp[i]!=null?', '+tp[i]+' °C':''}">${fmtW(v)}${dr[i]!=null&&v!=null?arrow(dr[i]):''}</div></td>`).filter((_,i)=>vis[i]).join('')}</tr>`+
-    (!open?'':(L.has('models')&&d[9]?META.blend.map(m=>{const v=d[9][m], off=META.view==='combined'&&META.off.includes(m), cur=META.view===m;
-      return `<tr class="sub ${r.match?'':'miss'} ${off?'moff':''}"><td class="lab"><i style="background:${modelColor(m)}"></i>${shortName(m)}${cur?' (shown)':off?' (off)':''} ${UL()}</td>${HOURS.map((h,i)=>`<td><div class="mini ${win(i)?'':'out'}" style="background:${color(v&&v[i])};color:${colorFg(v&&v[i])}">${v&&v[i]!=null?fmtW(v[i]):'–'}</div></td>`).filter((_,i)=>vis[i]).join('')}</tr>`}).join(''):'')+(L.has('gust')?subRow(r.match?'':'miss',`gusts ${UL()}`,HOURS.map((h,i)=>`<td><div class="mini ${win(i)?'':'out'}" style="background:${color(gu&&gu[i])};color:${colorFg(gu&&gu[i])}">${gu&&gu[i]!=null?fmtW(gu[i]):'–'}</div></td>`)):'')+
-    (L.has('temp')?subRow(r.match?'':'miss','air °C',HOURS.map((h,i)=>`<td><div class="mini ${win(i)?'':'out'}" style="background:${tcol(tp[i])}">${tp[i]??'–'}</div></td>`)):'')+
-    (L.has('cloud')?subRow(r.match?'':'miss','clouds %',HOURS.map((h,i)=>{const c=d[7]&&d[7][i]; return `<td><div class="mini txt cloudbar ${win(i)?'':'out'}" title="${c!=null?c+'% cloud cover':'no cloud data'}"><i style="height:${c??0}%"></i><span>${c??'–'}</span></div></td>`})):'')+
-    (L.has('tide')&&d[8]?subRow(r.match?'':'miss','tide m',HOURS.map((h,i)=>{const v=d[8][i]; return `<td><div class="mini txt ${win(i)?'':'out'}" title="Sea level vs mean sea level (not for navigation)">${v==null?'–':(v>0?'+':'')+v.toFixed(2)}</div></td>`})):''));
-  }).join('');
+  const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const cols=`style="grid-template-columns:repeat(${nVis},minmax(0,1fr))"`;
+  const row=(cells,cls='')=>`<div class="scells ${cls}" ${cols}>${V(cells).join('')}</div>`;
+  const sub=(lab,cells,cls='')=>`<div class="slab">${lab}</div>`+row(cells,'mini-row '+cls);
+  const hrs=`<div class="shrs" ${cols} aria-hidden="true">${V(HOURS).map(h=>`<span>${String(h).padStart(2,'0')}</span>`).join('')}</div>`;
+  if(!shown.length){$('tbl').innerHTML=`<p class="empty">No rideable days with these settings. Add larger gear, lower the minimal temperature, widen the time of day, or shorten the duration.</p>`;$('more').hidden=true;return}
+  // keep the existing order (newest first, then spot) and group spot-days by date
+  const groups=[]; for(const x of shown.slice(0,st.limit)){ const g=groups[groups.length-1]; if(g&&g.date===x.d[0]) g.items.push(x); else groups.push({date:x.d[0],items:[x]}) }
+  const lbl={ride:'Ride',maybe:'Maybe',no:'No'};
+  $('tbl').innerHTML=hrs+groups.map(({date,items})=>{
+    const offS=!inSeason(date), d0=items[0].d, fc=d0[5];
+    const tag=fc?`<span class="fc" title="Forecast: ${viewLabel()}">forecast · ${d0[6]||''}</span>`:`<span class="srctag" title="${viewLabel()}">${META.view==='combined'?'combined'+(d0[10]&&d0[10]<activeModels().length?` ${d0[10]}/${activeModels().length}`:''):shortName(META.view)}</span>`;
+    const focusDay=date===st.focusDate;
+    return `<section class="sday${offS?' offs':''}${focusDay?' focus':''}" id="day-${date}"><div class="sdh"><b>${wd(date)} ${dObj(date).toLocaleDateString('en-GB',{day:'numeric',month:'short'})}</b><small>${date.slice(0,4)}</small>${tag}</div>`+
+    items.map(({spot,d,r})=>{
+      const [,sp,dr,tp,gu]=d;
+      const xk=spot+'|'+date, open=st.expandAll||st.expanded.has(xk), hasL=[...L].some(k=>k==='tide'?d[8]:k==='models'?d[9]:true);
+      const v=r.match?'ride':verdictFor(d,spot).v;
+      const ws=r.works.slice().sort((a,b)=>prefCmp(a.g,b.g));
+      const pills=ws.length?ws.slice(0,3).map(w=>`<span class="pill" style="background:${gearColor(w.g)};color:${textOn(gearColor(w.g))}" title="${gearLabel(w.g)}: ${w.hours} h in range">${gearShort(w.g)}</span>`).join('')+(ws.length>3?`<span class="pill plus" title="Also works: ${ws.slice(3).map(w=>gearLabel(w.g)+' ('+w.hours+' h)').join(', ')}">+${ws.length-3}</span>`:''):'';
+      const head=`<span class="ssn">${multi?esc(SPOTS[spot].name):''}</span><span class="vpill ${v}">${lbl[v]}</span><span class="pills">${pills}</span>${hasL?`<span class="car" aria-hidden="true">${open?'▾':'▸'}</span>`:''}`;
+      const cells=sp.map((x,i)=>`<div class="cell ${r.inWin[i]?'':'out'} ${r.hit.has(i)?'hit':''}" style="background:${color(x)};color:${colorFg(x)}" title="${String(HOURS[i]).padStart(2,'0')}h: ${fmtW(x)} ${UL()}${dr[i]!=null?' from '+sector(dr[i])+' ('+dr[i]+'°)':''}${gu&&gu[i]!=null?', gusts '+fmtW(gu[i])+' '+UL():''}${tp[i]!=null?', '+tp[i]+' °C':''}">${x==null?'–':fmtW(x)}${dr[i]!=null&&x!=null?arrow(dr[i]):''}</div>`);
+      const det=!open?'':(L.has('models')&&d[9]?META.blend.map(m=>{const mv=d[9][m], off=META.view==='combined'&&META.off.includes(m), cur=META.view===m;
+          return sub(`<i style="background:${modelColor(m)}"></i>${shortName(m)}${cur?' (shown)':off?' (off)':''} ${UL()}`,HOURS.map((h,i)=>`<div class="mini ${win(i)?'':'out'}" style="background:${color(mv&&mv[i])};color:${colorFg(mv&&mv[i])}">${mv&&mv[i]!=null?fmtW(mv[i]):'–'}</div>`),off?'moff':'')}).join(''):'')+
+        (L.has('gust')?sub(`gusts ${UL()}`,HOURS.map((h,i)=>`<div class="mini ${win(i)?'':'out'}" style="background:${color(gu&&gu[i])};color:${colorFg(gu&&gu[i])}">${gu&&gu[i]!=null?fmtW(gu[i]):'–'}</div>`)):'')+
+        (L.has('temp')?sub('air °C',HOURS.map((h,i)=>`<div class="mini ${win(i)?'':'out'}" style="background:${tcol(tp[i])}">${tp[i]??'–'}</div>`)):'')+
+        (L.has('cloud')?sub('clouds %',HOURS.map((h,i)=>{const c=d[7]&&d[7][i]; return `<div class="mini txt cloudbar ${win(i)?'':'out'}" title="${c!=null?c+'% cloud cover':'no cloud data'}"><i style="height:${c??0}%"></i><span>${c??'–'}</span></div>`})):'')+
+        (L.has('tide')&&d[8]?sub('tide m',HOURS.map((h,i)=>{const t=d[8][i]; return `<div class="mini txt ${win(i)?'':'out'}" title="Sea level vs mean sea level (not for navigation)">${t==null?'–':(t>0?'+':'')+t.toFixed(2)}</div>`})):'');
+      return `<div class="sspot${r.match?'':' miss'}${focusDay&&spot===st.focusSpot?' focus':''}" id="row-${spot}-${date}">`+
+        (hasL?`<button type="button" class="ssh xbtn" data-x="${xk}" aria-expanded="${open}" aria-label="${open?'Hide':'Show'} details for ${multi?esc(SPOTS[spot].name)+', ':''}${fmtDate(date)}">${head}</button>`:`<div class="ssh">${head}</div>`)+
+        row(cells)+(det?`<div class="sdet">${det}</div>`:'')+`</div>`}).join('')+`</section>`}).join('');
   $('more').hidden=shown.length<=st.limit;
   $('more').textContent=`Show more days (${shown.length-st.limit} left)`;
 }
@@ -1147,7 +1198,7 @@ function openDay(date,spot){
   st.focusDate=date; st.focusSpot=spot; st.expandAll=false;
   st.expanded=new Set([spot+'|'+date]);
   showTab('season'); update();
-  requestAnimationFrame(()=>{ const row=document.querySelector('.days tr.focus'); if(row){ const grid=row.closest('.grid'), ths=grid.querySelectorAll('th'); const th=ths[1+(st.allDay?Math.max(0,HOURS.indexOf(st.hFrom)):0)]; if(th) grid.scrollLeft=th.offsetLeft-ths[0].offsetWidth-4; row.scrollIntoView({block:'start',behavior:'smooth'}); const b=row.querySelector('.xbtn'); b&&b.focus({preventScroll:true}) } });
+  requestAnimationFrame(()=>{ const row=document.querySelector('.sdays .sspot.focus'); if(row){ row.scrollIntoView({block:'start',behavior:'smooth'}); const b=row.querySelector('.xbtn'); b&&b.focus({preventScroll:true}) } });
 }
 function renderCalendar(){
   const keys=Object.keys(SPOTS).filter(k=>st.spots.has(k));
