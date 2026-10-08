@@ -465,6 +465,27 @@ body:not(.on-next) #seasonNote{display:none}
 .prioBox .lbl{margin-bottom:8px}
 .fold[open]>summary+.prioBox{margin-top:0}
 #p-cov .cov{border-top:0;margin-top:0;padding-top:0}
+
+/* calendar scrub loupe */
+.cal{position:relative}
+#calBody{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+.calgrid:focus-visible{outline:2px solid var(--sock);outline-offset:3px;border-radius:4px}
+.calgrid .sel{outline:2px solid var(--ink);outline-offset:1px;position:relative;z-index:1}
+.calLoupe{position:absolute;left:8px;right:8px;z-index:20;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;padding:8px 8px 6px;background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:0 10px 28px rgba(0,0,0,.22);pointer-events:none}
+.calLoupe[hidden]{display:none}
+.calLoupe .lt{display:flex;flex-direction:column;align-items:center;gap:2px;padding:5px 2px;border-radius:9px;background:var(--soft);min-width:0;font-size:11px;line-height:1.15;text-align:center;opacity:.8}
+.calLoupe .lt.empty{visibility:hidden}
+.calLoupe .lt.ride{background:var(--gc);color:var(--gt)}
+.calLoupe .lt.cur{opacity:1;box-shadow:0 0 0 2px var(--ink);transform:scale(1.06)}
+.calLoupe .ld{font-weight:600;opacity:.85}
+.calLoupe .ln{font-weight:700;font-size:12px;white-space:nowrap}
+.calLoupe .lg{display:inline-flex;align-items:center;gap:2px;font-size:12.5px}
+.calLoupe .lg .gi{width:16px;height:16px;margin:0}
+.calLoupe .lv{font-weight:700;font-size:12px}.calLoupe .lv.nod{font-weight:500;font-size:10.5px;opacity:.75}
+.calLoupe .lw{font-size:10.5px;opacity:.9;white-space:nowrap}
+.calLoupe .lhint{grid-column:1/-1;text-align:center;font-size:11px;color:var(--muted);margin-top:2px}
+.calLoupe.cancel{opacity:.55}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 </style>
 </head>
 <body>
@@ -487,7 +508,7 @@ body:not(.on-next) #seasonNote{display:none}
     <p class="snote" id="seasonBanner" hidden></p>
     <div class="sechead" id="calHead"></div>
     <div class="row" id="calSpots" role="group" aria-label="Spot" style="margin-bottom:10px"></div>
-    <div class="cal"><div id="calBody"></div><div class="gbars" id="calBars"></div></div>
+    <div class="cal"><div class="calLoupe" id="calLoupe" hidden aria-hidden="true"></div><span class="sr" id="calLive" aria-live="polite"></span><div id="calBody"></div><div class="gbars" id="calBars"></div></div>
     <details class="panel fold" id="p-cov" data-sec="cov">
     <summary><h2 id="h-cov">Wind coverage</h2><span class="psum" id="s-cov"></span></summary>
       <div class="cov">
@@ -697,7 +718,7 @@ body:not(.on-next) #seasonNote{display:none}
 </div></nav>
 
 <script>
-const APP_VERSION='3.35'; // app-<major>-<minor>; see the lake-wind-days-builds skill
+const APP_VERSION='3.36'; // app-<major>-<minor>; see the lake-wind-days-builds skill
 // ---- data store (Open-Meteo, cached in this browser)
 const DEFAULT_SPOTS={hlucin:{name:'Hlučín',lat:49.89,lon:18.17,tides:false},novemlyny:{name:'Nové Mlýny',lat:48.88,lon:16.68,tides:false},olesna:{name:'Olešná',lat:49.65,lon:18.30,tides:false}};
 // One catalogue for history (Historical Forecast API) and forecast (Forecast API).
@@ -1387,23 +1408,87 @@ function renderCalendar(){
   const start=new Date(first); start.setDate(start.getDate()-((start.getDay()+6)%7)); // Monday
   const weeks=[]; for(let d=new Date(start); d<=last; d.setDate(d.getDate()+7)) weeks.push(new Date(d));
   const cnt=new Map(); let total=0;
-  const cells=[];
+  const cells=[], calDays=[];
   for(let row=0;row<7;row++) for(const w of weeks){ const d=new Date(w); d.setDate(d.getDate()+row); const iso=isoDay(d);
     const inRange=d>=first&&d<=last, x=by.get(iso); let bg='', tip=`${d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})}: `;
     if(!inRange){ cells.push('<span style="visibility:hidden"></span>'); continue }
     if(x&&x.r.match){ const g=x.r.works.map(w=>w.g).sort(prefCmp)[0]; bg=gearColor(g); cnt.set(g,(cnt.get(g)||0)+1); total++; tip+=`${g.size} ${SHORT[g.type]}` } else tip+=x?'not rideable':'no data';
-    cells.push(x?`<button type="button" class="cd" data-cd="${iso}" title="${tip} · open this day" aria-label="${tip}. Open this day"${bg?` style="background:${bg}"`:''}></button>`:`<span title="${tip}"${bg?` style="background:${bg}"`:''}></span>`) }
+    calDays.push({iso,x});
+    cells.push(x?`<button type="button" class="cd" data-cd="${iso}" data-iso="${iso}" tabindex="-1" aria-label="${tip}. Open this day"${bg?` style="background:${bg}"`:''}></button>`:`<span data-iso="${iso}"${bg?` style="background:${bg}"`:''}></span>`) }
   const monthLbl=weeks.map(w=>{const e=new Date(w); e.setDate(e.getDate()+6); return ((e.getDate()<=7&&e>=first)||(w<=first&&e>=first))&&e<=last?`<span>${e.toLocaleDateString('en-GB',{month:'short'})}</span>`:'<span></span>'}).join('');
   $('calHead').textContent=`${SPOTS[st.calSpot].name}: ${total} rideable day${total!==1?'s':''} in ${year}`;
   { const ss=seasonState(); const b=$('seasonBanner'); b.hidden=false;
     if(ss.state==='in'){ const left=Math.round((dObj(ss.end)-dObj(todayISO()))/864e5); b.className='snote in'; b.innerHTML=`<b>Season in progress</b> · ${seasonName()} · ${left} day${left!==1?'s':''} left (ends ${longDate(ss.end)})` }
     else if(ss.state==='after'){ b.className='snote out'; b.innerHTML=`<b>Season over</b> · ${seasonName()} ended ${longDate(ss.end)}. Days after it are marked “off-season”.` }
     else { b.className='snote out'; b.innerHTML=`<b>Off-season</b> · your season (${seasonName()}) starts ${longDate(ss.start)}.` } }
-  $('calBody').innerHTML=`<div class="calmonths" style="grid-template-columns:repeat(${weeks.length},minmax(0,1fr))">${monthLbl}</div><div class="calgrid" style="grid-template-columns:repeat(${weeks.length},minmax(0,1fr))" role="group" aria-label="Calendar of rideable days in ${year}, coloured by gear. Tap a day to open it">${cells.join('')}</div>`;
-  $('calBody').querySelectorAll('[data-cd]').forEach(b=>b.onclick=()=>openDay(b.dataset.cd,st.calSpot));
+  $('calBody').innerHTML=`<div class="calmonths" style="grid-template-columns:repeat(${weeks.length},minmax(0,1fr))">${monthLbl}</div><div class="calgrid" style="grid-template-columns:repeat(${weeks.length},minmax(0,1fr))" role="group" tabindex="0" aria-label="Calendar of rideable days in ${year}, coloured by gear. Tap a day to open it, hold and slide to pick a day, or use the arrow keys">${cells.join('')}</div>`;
+  calDays.sort((a,b)=>a.iso<b.iso?-1:1); calScrub.days=calDays; calScrub.idx=new Map(calDays.map((d,i)=>[d.iso,i])); calHide();
   const mx=Math.max(1,...cnt.values());
   $('calBars').innerHTML=[...cnt.entries()].sort((a,b)=>b[1]-a[1]).map(([g,n])=>`<div class="gbar"><div class="row1"><span style="font-weight:600">${gearIcon(g.type)}${gearLabel(g)}</span><b>${n} d</b></div><div class="trk"><i style="width:${Math.round(n/mx*100)}%;background:${gearColor(g)}"></i></div></div>`).join('')||'<span class="status">No rideable days with these settings.</span>';
 }
+// ---- calendar scrub: hold a day to zoom in, slide left/right to move day by day, release to open ----
+const calScrub={days:[],idx:new Map(),sel:-1,active:false,cancel:false,timer:null,sx:0,sy:0,startI:0,suppressClick:0};
+function calDayInfo(i){ const d=calScrub.days[i]; if(!d) return null; const x=d.x, g=x&&x.r.match?x.r.works.map(w=>w.g).sort(prefCmp)[0]:null; return {...d,g} }
+function calLoupeHTML(center){
+  let h=''; for(let k=-3;k<=3;k++){ const i=center+k, d=calDayInfo(i);
+    if(!d){ h+='<span class="lt empty"></span>'; continue }
+    const dt=dObj(d.iso), wdS=dt.toLocaleDateString('en-GB',{weekday:'short'}), dm=dt.toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+    const body=!d.x?'<span class="lv nod">no data</span>':d.g?`<span class="lg">${gearIcon(d.g.type)}<b>${d.g.size}</b></span>`:'<span class="lv no">No</span>';
+    const wind=d.x&&d.x.r.max!=null?`<span class="lw">${fmtW(d.x.r.max)} ${UL()}</span>`:'<span class="lw">&nbsp;</span>';
+    h+=`<span class="lt${k===0?' cur':''}${d.g?' ride':''}" style="${d.g?`--gc:${gearColor(d.g)};--gt:${textOn(gearColor(d.g))}`:''}"><span class="ld">${wdS}</span><span class="ln">${dm}</span>${body}${wind}</span>` }
+  return h;
+}
+function calShow(i,anchorEl){
+  const lp=$('calLoupe'); if(!lp||!calScrub.days.length) return;
+  i=Math.max(0,Math.min(calScrub.days.length-1,i));
+  const changed=i!==calScrub.sel; calScrub.sel=i;
+  lp.innerHTML=calLoupeHTML(i)+`<span class="lhint">${calScrub.cancel?'Release to cancel':'Slide ← → to change day · release to open'}</span>`;
+  lp.classList.toggle('cancel',calScrub.cancel); lp.hidden=false;
+  $('calBody').querySelectorAll('.sel').forEach(e=>e.classList.remove('sel'));
+  const el=$('calBody').querySelector(`[data-iso="${calScrub.days[i].iso}"]`); el&&el.classList.add('sel');
+  // place the loupe above the touched row (or the selected cell), inside the calendar box
+  const box=lp.parentElement.getBoundingClientRect(), ref=(anchorEl||el||$('calBody')).getBoundingClientRect();
+  let top=ref.top-box.top-lp.offsetHeight-10; if(top<-lp.offsetHeight+20) top=ref.bottom-box.top+10;
+  lp.style.top=Math.max(-lp.offsetHeight-6,top)+'px';
+  if(changed){ const d=calDayInfo(i); $('calLive').textContent=`${dObj(d.iso).toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'})}: ${!d.x?'no data':d.g?gearLabel(d.g):'not rideable'}`; if(calScrub.active&&navigator.vibrate) try{navigator.vibrate(6)}catch(e){} }
+}
+function calHide(){ const lp=$('calLoupe'); if(lp) lp.hidden=true; $('calBody').querySelectorAll('.sel').forEach(e=>e.classList.remove('sel')); calScrub.active=false; calScrub.cancel=false; calScrub.sel=-1 }
+function calOpenSel(){ const d=calScrub.days[calScrub.sel]; calHide(); if(d&&d.x) openDay(d.iso,st.calSpot) }
+(()=>{
+  const body=$('calBody'); if(!body) return;
+  const isoAt=(x,y)=>{ const el=document.elementFromPoint(x,y); const c=el&&el.closest&&el.closest('[data-iso]'); return c&&body.contains(c)?c.dataset.iso:null };
+  body.addEventListener('touchstart',e=>{
+    if(e.touches.length!==1) return; const t=e.touches[0], iso=isoAt(t.clientX,t.clientY); if(!iso) return;
+    calScrub.sx=t.clientX; calScrub.sy=t.clientY; calScrub.startI=calScrub.idx.get(iso); calScrub.cancel=false;
+    clearTimeout(calScrub.timer);
+    calScrub.timer=setTimeout(()=>{ calScrub.active=true; calShow(calScrub.startI); if(navigator.vibrate) try{navigator.vibrate(12)}catch(e){} },350);
+  },{passive:true});
+  body.addEventListener('touchmove',e=>{
+    const t=e.touches[0];
+    if(!calScrub.active){ if(Math.hypot(t.clientX-calScrub.sx,t.clientY-calScrub.sy)>8) clearTimeout(calScrub.timer); return }
+    e.preventDefault();
+    calScrub.cancel=(calScrub.sy-t.clientY)>70;
+    calShow(calScrub.startI+Math.round((t.clientX-calScrub.sx)/14));
+  },{passive:false});
+  const end=()=>{ clearTimeout(calScrub.timer); if(!calScrub.active) return; calScrub.suppressClick=Date.now(); if(calScrub.cancel) calHide(); else calOpenSel() };
+  body.addEventListener('touchend',end); body.addEventListener('touchcancel',()=>{clearTimeout(calScrub.timer); calHide()});
+  body.addEventListener('contextmenu',e=>{ if(e.target.closest('[data-iso]')) e.preventDefault() });
+  // a tap (or click) still opens the day; ignore the click that follows a scrub
+  body.addEventListener('click',e=>{ const b=e.target.closest('[data-cd]'); if(!b) return; if(Date.now()-calScrub.suppressClick<600) return; calHide(); openDay(b.dataset.cd,st.calSpot) });
+  // mouse: hover shows the zoomed strip
+  body.addEventListener('mousemove',e=>{ if(calScrub.active) return; const iso=isoAt(e.clientX,e.clientY); if(iso&&calScrub.idx.get(iso)!==calScrub.sel) calShow(calScrub.idx.get(iso)) });
+  body.addEventListener('mouseleave',()=>{ if(!calScrub.active&&document.activeElement!==body.querySelector('.calgrid')) calHide() });
+  // keyboard: focus the grid, arrows move by day / week, Enter opens, Esc closes
+  body.addEventListener('keydown',e=>{
+    if(!e.target.classList.contains('calgrid')) return;
+    const step={ArrowLeft:-1,ArrowRight:1,ArrowUp:-7,ArrowDown:7}[e.key];
+    if(step){ e.preventDefault(); calShow((calScrub.sel<0?0:calScrub.sel)+step); return }
+    if(e.key==='Enter'&&calScrub.sel>=0){ e.preventDefault(); calOpenSel() }
+    if(e.key==='Escape') calHide();
+  });
+  body.addEventListener('focusin',e=>{ if(e.target.classList.contains('calgrid')&&calScrub.sel<0&&calScrub.days.length){ const last=calScrub.days.map(d=>!!(d.x&&d.x.r.match)).lastIndexOf(true); calShow(last>=0?last:calScrub.days.length-1) } });
+  body.addEventListener('focusout',e=>{ if(e.target.classList.contains('calgrid')) calHide() });
+})();
 function renderWhen(){
   if($('appVer')) $('appVer').textContent='v'+APP_VERSION;
   const last=Object.values(SPOTS).map(s=>s.updated).filter(Boolean).sort().pop();
