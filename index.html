@@ -138,7 +138,9 @@ tr.miss td{opacity:.35}
 .how summary{cursor:pointer;color:var(--ink);font-weight:600}
 .how p{margin:6px 0}
 .cov{border-top:1px solid var(--line);margin-top:18px;padding-top:14px}
-.prioItem{display:inline-flex;align-items:center;gap:2px;border:1px solid var(--line);border-radius:999px;padding:2px 4px 2px 10px;font-size:13px;font-weight:600}
+.prioItem{display:inline-flex;align-items:center;gap:2px;border:1px solid var(--line);border-radius:999px;padding:2px 4px 2px 6px;font-size:13px;font-weight:600;background:var(--panel);cursor:grab;touch-action:none;user-select:none}
+.prioItem .pgrip{color:var(--muted);font-size:11px;letter-spacing:-2px;margin-right:4px}
+.prioItem.dragging{position:relative;z-index:5;cursor:grabbing;box-shadow:0 6px 16px rgba(0,0,0,.2)}
 .x.mv{font-size:11px;padding:2px 4px}
 .x.mv[disabled]{opacity:.25;cursor:default}
 .dirBlock{border-top:1px solid var(--line);margin-top:16px;padding-top:12px}
@@ -828,7 +830,7 @@ const GEAR_DEFAULTS_VERSION=2;
 // rider + quiver are saved in this browser
 const GEAR_KEY='lakewind-gear-v1';
 function saveGear(){
-  try{ localStorage.setItem(GEAR_KEY,JSON.stringify({defaultsVersion:GEAR_DEFAULTS_VERSION,unit:st.unit,tUnit:st.tUnit||'c',weight:st.weight,skill:st.skill,suit:st.suit,lowMode:st.lowMode,
+  try{ localStorage.setItem(GEAR_KEY,JSON.stringify({defaultsVersion:GEAR_DEFAULTS_VERSION,unit:st.unit,tUnit:st.tUnit||'c',weight:st.weight,skill:st.skill,suit:st.suit,lowMode:st.lowMode,prio:st.prio,
     gear:st.gear.map(({id,...g})=>g)})) }catch(e){}
 }
 function loadGear(){
@@ -842,6 +844,7 @@ function loadGear(){
     if(SKILL[s.skill]) st.skill=s.skill;
     if(s.suit!=null) st.suit=+s.suit;
     if(s.lowMode==='takeoff'||s.lowMode==='stay') st.lowMode=s.lowMode;
+    if(Array.isArray(s.prio)&&s.prio.length===3&&['fin','wingfoil','windfoil'].every(t=>s.prio.includes(t))) st.prio=s.prio.slice();
   }catch(e){}
 }
 const st={
@@ -1168,10 +1171,38 @@ function dirChips(){
 // preferred gear for a day: types in the chosen order (default fin > wingfoil > windfoil), within a type the smallest rig that works
 const prefCmp=(a,b)=>st.prio.indexOf(a.type)-st.prio.indexOf(b.type)||a.size-b.size||a.id-b.id;
 function renderPrio(){
-  $('prio').innerHTML=st.prio.map((k,i)=>`${i?'<span class="status">›</span>':''}<span class="prioItem"><span class="swatch" style="background:${TYPE_MID[k]}"></span>${TYPES[k].name}
+  $('prio').innerHTML=st.prio.map((k,i)=>`${i?'<span class="status psep" aria-hidden="true">›</span>':''}<span class="prioItem" data-pk="${k}" title="Drag to change the order"><span class="pgrip" aria-hidden="true">⋮⋮</span><span class="swatch" style="background:${TYPE_MID[k]}"></span>${TYPES[k].name}
     <button class="x mv" data-i="${i}" data-d="-1" ${i===0?'disabled':''} aria-label="Move ${TYPES[k].name} earlier">◀</button><button class="x mv" data-i="${i}" data-d="1" ${i===st.prio.length-1?'disabled':''} aria-label="Move ${TYPES[k].name} later">▶</button></span>`).join('');
-  $('prio').querySelectorAll('button').forEach(b=>b.onclick=()=>{const i=+b.dataset.i,j=i+ +b.dataset.d; [st.prio[i],st.prio[j]]=[st.prio[j],st.prio[i]]; renderPrio(); update()});
+  $('prio').querySelectorAll('button').forEach(b=>b.onclick=()=>{const i=+b.dataset.i,j=i+ +b.dataset.d; [st.prio[i],st.prio[j]]=[st.prio[j],st.prio[i]]; saveGear(); renderPrio(); update()});
 }
+// drag the preference chips (mouse or touch) to change the order
+(()=>{
+  const box=$('prio'); let drag=null;
+  box.addEventListener('pointerdown',e=>{
+    const it=e.target.closest('.prioItem'); if(!it||e.target.closest('button')||e.button>0) return;
+    e.preventDefault(); it.setPointerCapture(e.pointerId);
+    drag={it,id:e.pointerId,x:e.clientX,y:e.clientY}; it.classList.add('dragging');
+  });
+  box.addEventListener('pointermove',e=>{
+    if(!drag||e.pointerId!==drag.id) return;
+    drag.it.style.transform=`translate(${e.clientX-drag.x}px,${e.clientY-drag.y}px)`;
+    const items=[...box.querySelectorAll('.prioItem')].filter(x=>x!==drag.it);
+    for(const o of items){ const r=o.getBoundingClientRect(); if(e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top-4&&e.clientY<=r.bottom+4){
+      const before=drag.it.getBoundingClientRect(); const after=e.clientX<r.left+r.width/2;
+      after?o.before(drag.it):o.after(drag.it);
+      const now=drag.it.getBoundingClientRect(); drag.x+=now.left-before.left; drag.y+=now.top-before.top;
+      drag.it.style.transform=`translate(${e.clientX-drag.x}px,${e.clientY-drag.y}px)`; break } }
+  });
+  const end=e=>{
+    if(!drag||(e&&e.pointerId!==drag.id)) return; const d=drag; drag=null;
+    d.it.classList.remove('dragging'); d.it.style.transform='';
+    const order=[...box.querySelectorAll('.prioItem')].map(x=>x.dataset.pk);
+    if(order.join()!==st.prio.join()){ st.prio=order; saveGear(); update() }
+    renderPrio();
+  };
+  box.addEventListener('pointerup',end); box.addEventListener('pointercancel',end);
+})();
+
 function renderCoverage(){
   const on=st.gear.filter(g=>g.on);
   const MAXK=30, yes=new Array(MAXK+1).fill(0), no=new Array(MAXK+1).fill(0); let total=0, rideable=0;
