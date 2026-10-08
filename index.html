@@ -299,7 +299,10 @@ body:not(.on-next) #seasonNote{display:none}
 .sechead{font:700 24px/1.1 "Barlow Semi Condensed",Barlow,sans-serif;margin:4px 0 10px}
 .cal{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:14px}
 .calgrid{display:grid;gap:3px}
-.calgrid span{aspect-ratio:1;border-radius:3px;background:var(--calEmpty)}
+.calgrid span,.calgrid .cd{aspect-ratio:1;border-radius:3px;background:var(--calEmpty)}
+.calgrid .cd{border:0;padding:0;margin:0;min-width:0;width:100%;cursor:pointer;display:block}
+.calgrid .cd:hover{outline:2px solid var(--ink);outline-offset:0}
+.calgrid .cd:focus-visible{outline:2px solid var(--sock);outline-offset:1px}
 .calmonths{display:grid;gap:3px;font-size:11px;color:var(--muted);margin-bottom:3px}
 .gbars{display:flex;flex-direction:column;gap:8px;margin-top:12px}
 .gbar .row1{display:flex;justify-content:space-between;font-size:14px}
@@ -357,7 +360,8 @@ body:not(.on-next) #seasonNote{display:none}
 /* Season: compact day list, all hours fit an upright phone */
 .sdays{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:4px 10px 8px;font-variant-numeric:tabular-nums}
 .shrs{display:grid;gap:2px;position:sticky;top:0;z-index:3;background:var(--panel);padding:6px 0 4px;font:600 10.5px Barlow,sans-serif;color:var(--muted);text-align:center;border-bottom:1px solid var(--line)}
-.sday{padding:8px 0 6px;border-top:1px solid var(--line)}
+.sday{padding:8px 0 6px;border-top:1px solid var(--line);scroll-margin-top:34px}
+.sspot{scroll-margin-top:34px}
 .shrs+.sday{border-top:0}
 .sday.offs{background-image:repeating-linear-gradient(135deg,transparent 0 6px,color-mix(in srgb,var(--muted) 8%,transparent) 6px 12px);margin:0 -10px;padding-left:10px;padding-right:10px}
 .sdh{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;margin-bottom:4px}
@@ -641,7 +645,7 @@ body:not(.on-next) #seasonNote{display:none}
 </div></nav>
 
 <script>
-const APP_VERSION='3.30'; // app-<major>-<minor>; see the lake-wind-days-builds skill
+const APP_VERSION='3.31'; // app-<major>-<minor>; see the lake-wind-days-builds skill
 // ---- data store (Open-Meteo, cached in this browser)
 const DEFAULT_SPOTS={hlucin:{name:'Hlučín',lat:49.89,lon:18.17,tides:false},novemlyny:{name:'Nové Mlýny',lat:48.88,lon:16.68,tides:false},olesna:{name:'Olešná',lat:49.65,lon:18.30,tides:false}};
 // One catalogue for history (Historical Forecast API) and forecast (Forecast API).
@@ -958,6 +962,7 @@ function renderDays(){
   const hits=results.filter(x=>x.r.match);
   $('count').innerHTML=`${hits.length} <small>rideable of ${results.length} spot-days</small>`;
   const shown=st.showAll?results:results.filter(x=>x.r.match||(x.spot===st.focusSpot&&x.d[0]===st.focusDate));
+  if(st.focusDate){ const fi=shown.findIndex(x=>x.spot===st.focusSpot&&x.d[0]===st.focusDate); if(fi>=st.limit) st.limit=fi+30 } // a day opened from Next days or the calendar must be in the list
   const multi=st.spots.size>1;
   const L=st.layers, win=i=>HOURS[i]>=st.hFrom&&HOURS[i]<=st.hTo;
   const vis=HOURS.map((h,i)=>st.allDay||win(i)), nVis=vis.filter(Boolean).length, V=a=>a.filter((_,i)=>vis[i]);
@@ -1227,7 +1232,7 @@ function openDay(date,spot){
   st.focusDate=date; st.focusSpot=spot; st.expandAll=false;
   st.expanded=new Set([spot+'|'+date]);
   showTab('season'); update();
-  requestAnimationFrame(()=>{ const row=document.querySelector('.sdays .sspot.focus'); if(row){ row.scrollIntoView({block:'start',behavior:'smooth'}); const b=row.querySelector('.xbtn'); b&&b.focus({preventScroll:true}) } });
+  requestAnimationFrame(()=>{ const row=document.querySelector('.sdays .sspot.focus'); if(row){ const day=row.closest('.sday'), tgt=day&&day.querySelector('.sspot')===row?day:row; tgt.scrollIntoView({block:'start',behavior:'smooth'}); const b=row.querySelector('.xbtn'); b&&b.focus({preventScroll:true}) } });
 }
 function renderCalendar(){
   const keys=Object.keys(SPOTS).filter(k=>st.spots.has(k));
@@ -1248,14 +1253,15 @@ function renderCalendar(){
     const inRange=d>=first&&d<=last, x=by.get(iso); let bg='', tip=`${d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})}: `;
     if(!inRange){ cells.push('<span style="visibility:hidden"></span>'); continue }
     if(x&&x.r.match){ const g=x.r.works.map(w=>w.g).sort(prefCmp)[0]; bg=gearColor(g); cnt.set(g,(cnt.get(g)||0)+1); total++; tip+=`${g.size} ${SHORT[g.type]}` } else tip+=x?'not rideable':'no data';
-    cells.push(`<span title="${tip}"${bg?` style="background:${bg}"`:''}></span>`) }
+    cells.push(x?`<button type="button" class="cd" data-cd="${iso}" title="${tip} · open this day" aria-label="${tip}. Open this day"${bg?` style="background:${bg}"`:''}></button>`:`<span title="${tip}"${bg?` style="background:${bg}"`:''}></span>`) }
   const monthLbl=weeks.map(w=>{const e=new Date(w); e.setDate(e.getDate()+6); return ((e.getDate()<=7&&e>=first)||(w<=first&&e>=first))&&e<=last?`<span>${e.toLocaleDateString('en-GB',{month:'short'})}</span>`:'<span></span>'}).join('');
   $('calHead').textContent=`${SPOTS[st.calSpot].name}: ${total} rideable day${total!==1?'s':''} in ${year}`;
   { const ss=seasonState(); const b=$('seasonBanner'); b.hidden=false;
     if(ss.state==='in'){ const left=Math.round((dObj(ss.end)-dObj(todayISO()))/864e5); b.className='snote in'; b.innerHTML=`<b>Season in progress</b> · ${seasonName()} · ${left} day${left!==1?'s':''} left (ends ${longDate(ss.end)})` }
     else if(ss.state==='after'){ b.className='snote out'; b.innerHTML=`<b>Season over</b> · ${seasonName()} ended ${longDate(ss.end)}. Days after it are marked “off-season”.` }
     else { b.className='snote out'; b.innerHTML=`<b>Off-season</b> · your season (${seasonName()}) starts ${longDate(ss.start)}.` } }
-  $('calBody').innerHTML=`<div class="calmonths" style="grid-template-columns:repeat(${weeks.length},minmax(0,1fr))">${monthLbl}</div><div class="calgrid" style="grid-template-columns:repeat(${weeks.length},minmax(0,1fr))" role="img" aria-label="Calendar of rideable days in ${year}, coloured by gear">${cells.join('')}</div>`;
+  $('calBody').innerHTML=`<div class="calmonths" style="grid-template-columns:repeat(${weeks.length},minmax(0,1fr))">${monthLbl}</div><div class="calgrid" style="grid-template-columns:repeat(${weeks.length},minmax(0,1fr))" role="group" aria-label="Calendar of rideable days in ${year}, coloured by gear. Tap a day to open it">${cells.join('')}</div>`;
+  $('calBody').querySelectorAll('[data-cd]').forEach(b=>b.onclick=()=>openDay(b.dataset.cd,st.calSpot));
   const mx=Math.max(1,...cnt.values());
   $('calBars').innerHTML=[...cnt.entries()].sort((a,b)=>b[1]-a[1]).map(([g,n])=>`<div class="gbar"><div class="row1"><span style="font-weight:600">${gearIcon(g.type)}${gearLabel(g)}</span><b>${n} d</b></div><div class="trk"><i style="width:${Math.round(n/mx*100)}%;background:${gearColor(g)}"></i></div></div>`).join('')||'<span class="status">No rideable days with these settings.</span>';
 }
