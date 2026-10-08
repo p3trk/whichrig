@@ -729,7 +729,7 @@ body:not(.on-next) #seasonNote{display:none}
 </div></nav>
 
 <script>
-const APP_VERSION='3.42'; // app-<major>-<minor>; see the lake-wind-days-builds skill
+const APP_VERSION='3.43'; // app-<major>-<minor>; see the lake-wind-days-builds skill
 // ---- data store (Open-Meteo, cached in this browser)
 const DEFAULT_SPOTS={hlucin:{name:'Hlučín',lat:49.89,lon:18.17,tides:false},novemlyny:{name:'Nové Mlýny',lat:48.88,lon:16.68,tides:false},olesna:{name:'Olešná',lat:49.65,lon:18.30,tides:false}};
 // One catalogue for history (Historical Forecast API) and forecast (Forecast API).
@@ -1412,7 +1412,7 @@ function renderNext(){
     </div>`;
   });
   $('nextBig').innerHTML=`${rideDays} rideable day${rideDays!==1?'s':''} <span>in the next ${dates.length}</span>`;
-  $('nextSmall').innerHTML=best?`Best: ${dObj(best.date).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})} at ${SPOTS[best.k].name.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}<br>${best.pick.size} ${SHORT[best.pick.type]} ${hitWindow(best.r)} · ${best.ag.yes}/${best.ag.n} models agree`:(st.gear.some(g=>g.on)?'Nothing rideable with the gear that is switched on.':'Switch on at least one piece of gear.');
+  $('nextSmall').innerHTML=best?'':(st.gear.some(g=>g.on)?'Nothing rideable with the gear that is switched on.':'Switch on at least one piece of gear.');
   const ss=seasonState(), offN=dates.filter(d=>!inSeason(d)).length;
   const sline=ss.state==='in'?(offN?`Your season (${seasonName()}) ends ${longDate(ss.end)}; ${offN} of these days ${offN>1?'are':'is'} after it.`:''):ss.state==='after'?`Off-season: your season (${seasonName()}) ended ${longDate(ss.end)}.`:`Off-season: your season (${seasonName()}) starts ${longDate(ss.start)}.`;
   $('seasonNote').hidden=!sline; $('seasonNote').className='snote '+(ss.state==='in'?'in':'out'); $('seasonNote').textContent=sline;
