@@ -129,6 +129,8 @@ tr.miss td{opacity:.35}
 .more[hidden]{display:none}
 .foot{color:var(--muted);font-size:13px;margin-top:18px;max-width:78ch}
 .riderRow{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px 24px;margin-bottom:16px;align-items:start}
+.addSpot{margin:14px 0 4px;padding-top:12px;border-top:1px solid var(--line)}
+.addSpot>.row{gap:8px}
 .wsBox{margin:-4px 0 14px}
 .wsHead{display:flex;align-items:center;gap:8px}
 .wsBox .hint{margin-top:2px}
@@ -636,6 +638,24 @@ body:not(.on-next) #seasonNote{display:none}
         <div class="row" id="years" role="group" aria-labelledby="yearLbl"></div>
       </div>
     </div>
+    <div class="addSpot">
+      <label class="lbl" for="addName">Add spot</label>
+      <div class="row" style="flex-wrap:nowrap">
+        <input type="search" id="addName" placeholder="Lake or town name" style="font:500 14px Barlow,sans-serif;border:1px solid var(--line);border-radius:8px;padding:6px 8px;background:var(--panel);color:var(--ink);min-width:0;width:180px">
+        <button class="btn ghost" id="addSearch">Search</button>
+      </div>
+      <div class="row" id="addResults" style="margin-top:8px"></div>
+    <div class="row" style="margin-top:10px;gap:8px">
+      <span class="lbl" style="margin:0 6px 0 0">Or by coordinates</span>
+      <input id="cName" placeholder="Name" aria-label="Spot name" class="inp" style="width:130px">
+      <input id="cLat" placeholder="Latitude, e.g. 49.89" aria-label="Latitude" class="inp" style="width:150px" inputmode="decimal">
+      <input id="cLon" placeholder="Longitude, e.g. 18.17" aria-label="Longitude" class="inp" style="width:150px" inputmode="decimal">
+      <label class="toggle" style="font-size:13px"><input type="checkbox" id="cTide"> At the sea (download tides)</label>
+      <button class="btn ghost" id="cAdd">Add</button>
+    </div>
+    <span class="hint">You can paste both coordinates into the latitude box, e.g. "49.89, 18.17" or "43.2504011N, 16.6349519E" (degrees-minutes-seconds and S/W work too). Tides only exist at the sea; inland lakes have none.</span>
+      <p class="status" id="spotStatus" role="status" aria-live="polite" style="margin:8px 0 0"></p>
+    </div>
       <div class="dirBlock">
       <span class="lbl">Wind direction per spot <span class="status" style="font-weight:400">(columns are the directions the wind comes from; the arrow shows where it blows. Tap to pick one or more, or Any)</span></span>
       <div id="dirs"></div>
@@ -677,26 +697,11 @@ body:not(.on-next) #seasonNote{display:none}
     </div>
     <div class="scroll" style="margin-top:14px"><table class="dataTbl" id="dataTbl"></table></div>
     <div class="row" style="margin-top:12px;gap:10px 16px">
-      <div class="row" style="flex-wrap:nowrap">
-        <label class="lbl" for="addName" style="margin:0 6px 0 0">Add spot</label>
-        <input type="search" id="addName" placeholder="Lake or town name" style="font:500 14px Barlow,sans-serif;border:1px solid var(--line);border-radius:8px;padding:6px 8px;background:var(--panel);color:var(--ink);min-width:0;width:180px">
-        <button class="btn ghost" id="addSearch">Search</button>
-      </div>
       <span style="flex:1"></span>
       <button class="btn ghost" id="expData">Export data (JSON)</button>
       <button class="btn ghost" id="impBtn">Import data</button>
       <input type="file" id="impFile" accept=".json,application/json" hidden>
     </div>
-    <div class="row" id="addResults" style="margin-top:8px"></div>
-    <div class="row" style="margin-top:10px;gap:8px">
-      <span class="lbl" style="margin:0 6px 0 0">Add by coordinates</span>
-      <input id="cName" placeholder="Name" aria-label="Spot name" class="inp" style="width:130px">
-      <input id="cLat" placeholder="Latitude, e.g. 49.89" aria-label="Latitude" class="inp" style="width:150px" inputmode="decimal">
-      <input id="cLon" placeholder="Longitude, e.g. 18.17" aria-label="Longitude" class="inp" style="width:150px" inputmode="decimal">
-      <label class="toggle" style="font-size:13px"><input type="checkbox" id="cTide"> At the sea (download tides)</label>
-      <button class="btn ghost" id="cAdd">Add</button>
-    </div>
-    <span class="hint">You can paste both coordinates into the latitude box, e.g. "49.89, 18.17" or "43.2504011N, 16.6349519E" (degrees-minutes-seconds and S/W work too). Tides only exist at the sea; inland lakes have none.</span>
     <p class="status" id="dataStatus" role="status" aria-live="polite" style="margin:10px 0 0"></p>
     <p class="hint">Weather data by <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo.com</a> (CC BY 4.0). Free for personal, non-commercial use.</p>
   </details>
@@ -743,7 +748,7 @@ body:not(.on-next) #seasonNote{display:none}
 </div></nav>
 
 <script>
-const APP_VERSION='3.40'; // app-<major>-<minor>; see the lake-wind-days-builds skill
+const APP_VERSION='3.41'; // app-<major>-<minor>; see the lake-wind-days-builds skill
 // ---- data store (Open-Meteo, cached in this browser)
 const DEFAULT_SPOTS={hlucin:{name:'Hlučín',lat:49.89,lon:18.17,tides:false},novemlyny:{name:'Nové Mlýny',lat:48.88,lon:16.68,tides:false},olesna:{name:'Olešná',lat:49.65,lon:18.30,tides:false}};
 // One catalogue for history (Historical Forecast API) and forecast (Forecast API).
@@ -1588,7 +1593,8 @@ async function saveText(name,data,mime,statusEl,okMsg){
 $('csv').onclick=()=>saveText(`wind-days-${[...st.spots].join('-')}.csv`,buildCSV(),'text/csv',$('csvStatus'),'CSV saved.');
 
 // ---- Open-Meteo
-const setStatus=m=>{$('dataStatus').textContent=m; try{panelSums()}catch(e){}};
+let addMsg=false; const spotMsg=m=>{$('spotStatus').textContent=m};
+const setStatus=m=>{$('dataStatus').textContent=m; if(addMsg) spotMsg(m); try{panelSums()}catch(e){}};
 const isoDay=d=>new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);
 const addDays=(s,n)=>{const d=new Date(s+'T12:00:00');d.setDate(d.getDate()+n);return isoDay(d)};
 const todayISO=()=>isoDay(new Date());
@@ -1795,7 +1801,7 @@ async function searchSpot(){
       SPOTS[key]={name:r.name,lat:+r.latitude,lon:+r.longitude,m:{},tide:{},days:[],updated:null};
       st.spots.add(key); st.dirs[key]=new Set(SECT); saveStore();
       $('addResults').innerHTML=''; $('addName').value='';
-      afterDataChange(); runDownload([key],'full');});
+      afterDataChange(); addDl(key);});
   }catch(e){ $('addResults').innerHTML=`<span class="status">${e.network?"Couldn't reach Open-Meteo. Open the downloaded HTML file in your browser to search.":'Search failed: '+e.message}</span>` }
 }
 $('addSearch').onclick=searchSpot;
@@ -1826,16 +1832,18 @@ function parsePair(str){ // returns [lat,lon] or null
   return (lat>=-90&&lat<=90&&lon>=-180&&lon<=180)?[lat,lon]:null;
 }
 $('cLat').addEventListener('input',e=>{const p=parsePair(e.target.value); if(p&&/[\s,;NSEW]/i.test(e.target.value.trim().replace(/^-/,''))&&!/^\s*-?\d+(?:[.,]\d+)?\s*[NS]?\s*$/i.test(e.target.value)){ $('cLat').value=String(+p[0].toFixed(6)); $('cLon').value=String(+p[1].toFixed(6)) }});
+// a new spot: show its download progress right under the add form
+function addDl(key){ addMsg=true; spotMsg('Added '+SPOTS[key].name+'. Downloading wind data…'); Promise.resolve(runDownload([key],'full')).finally(()=>{addMsg=false}) }
 $('cAdd').onclick=()=>{
   const pair=parsePair($('cLat').value); let lat, lon;
   if(pair&&!$('cLon').value.trim()) [lat,lon]=pair; else { lat=parseCoord($('cLat').value,'lat'); lon=parseCoord($('cLon').value,'lon') }
-  if(!(lat>=-90&&lat<=90)||!(lon>=-180&&lon<=180)){ setStatus('Enter a latitude between -90 and 90 and a longitude between -180 and 180.'); return }
+  if(!(lat>=-90&&lat<=90)||!(lon>=-180&&lon<=180)){ spotMsg('Enter a latitude between -90 and 90 and a longitude between -180 and 180.'); return }
   const name=$('cName').value.trim()||`${lat.toFixed(3)}, ${lon.toFixed(3)}`;
   let key=name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'')||'spot'; while(SPOTS[key]) key+='x';
   SPOTS[key]={name,lat:Math.round(lat*1e4)/1e4,lon:Math.round(lon*1e4)/1e4,m:{},tide:{},days:[],updated:null,tides:$('cTide').checked?undefined:false};
   st.spots.add(key); st.dirs[key]=new Set(SECT); saveStore();
   ['cName','cLat','cLon'].forEach(id=>$(id).value=''); $('cTide').checked=false;
-  afterDataChange(); runDownload([key],'full');
+  afterDataChange(); addDl(key);
 };
 $('addName').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();searchSpot()}});
 loadStoreFix(); $('start').value=META.start; $('startAuto').checked=META.startAuto; $('start').max=todayISO(); if(!META.fcDays) META.fcDays=5; $('fcDays').value=META.fcDays;
