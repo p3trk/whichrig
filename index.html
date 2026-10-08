@@ -267,7 +267,7 @@ body:not(.on-next) #seasonNote{display:none}
 .dcard:active{box-shadow:inset 0 0 0 2px var(--sock)}
 .dcard:focus-visible{outline:2px solid var(--sock);outline-offset:2px}
 .dcard .strip,.dcard .meta,.dcard .top{width:100%}
-.dcard .top{display:flex;align-items:center;gap:10px;width:100%;background:none;border:none;padding:0;color:inherit;text-align:left;cursor:pointer;font:inherit}
+.dcard .top{display:flex;flex-wrap:nowrap;align-items:center;gap:6px 10px;width:100%;background:none;border:none;padding:0;color:inherit;text-align:left;cursor:pointer;font:inherit}
 .dcard .dd{font:700 18px "Barlow Semi Condensed",Barlow,sans-serif;min-width:62px}
 .vpill{font:700 12px Barlow,sans-serif;letter-spacing:.04em;text-transform:uppercase;padding:4px 8px;border-radius:6px}
 .vpill.ride{background:var(--ride);color:var(--rideT)}.vpill.maybe{background:var(--maybe);color:var(--maybeT)}.vpill.no{background:var(--no);color:var(--noT)}
@@ -277,7 +277,10 @@ body:not(.on-next) #seasonNote{display:none}
 .dcard .slink .sn{text-decoration:underline;text-underline-offset:2px}
 .dcard .slink:hover{color:var(--ink)}
 .dcard .slink .sg{color:var(--ink);font-weight:700;text-decoration:none;display:inline-flex;align-items:center}
-.dcard .spots{display:flex;flex-wrap:wrap;align-items:center;gap:2px 16px;font-size:13px}
+.dcard .spots{display:flex;flex-wrap:wrap;align-items:center;gap:2px 12px;font-size:13px;flex:1 1 0;min-width:0}
+.dcard .top .dd,.dcard .top .vpill{flex:none;align-self:flex-start}
+.dcard .top .vpill{margin-top:1px}
+.dcard .top .slink{font-size:14px}
 .dcard .slink{white-space:nowrap;flex-wrap:nowrap}
 .dcard .spots .lab{color:var(--muted);font-size:12px}
 .strip{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:2px}
@@ -1120,12 +1123,12 @@ function renderNext(){
     const lbl={ride:'Ride',maybe:'Maybe',no:'No'};
     const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
     const rides=per.filter(x=>x.v==='ride');
-    const spotLinks=rides.length>1?`<span class="spots">${rides.map(x=>`<button type="button" class="slink" data-goday="${date}" data-gospot="${x.k}" title="Open ${esc(SPOTS[x.k].name)} on this day in Season"><span class="sn">${esc(SPOTS[x.k].name)}</span>${x.pick?` <span class="sg">${gearShort(x.pick)}</span>`:''}</button>`).join('')}</span>`:'';
+    const goList=rides.length?rides:per.filter(x=>x.v==='maybe');
+    const spotLinks=`<span class="spots">${goList.map(x=>`<button type="button" class="slink" data-goday="${date}" data-gospot="${x.k}" title="Open ${esc(SPOTS[x.k].name)} on this day in Season"><span class="sn">${esc(SPOTS[x.k].name)}</span>${x.pick?` <span class="sg">${gearShort(x.pick)}</span>`:''}</button>`).join('')}</span>`;
     return divider+`<div role="button" tabindex="0" class="dcard${off?' off':''}" data-card="${date}" data-spot="${top.k}" aria-label="${dObj(date).toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'})}, ${SPOTS[top.k].name}: ${lbl[top.v]}. Open this day in Season"><span class="top">
       <span class="dd">${dObj(date).toLocaleDateString('en-GB',{weekday:'short'})} ${+date.slice(8)}</span>
       <span class="vpill ${top.v}">${lbl[top.v]}</span>
-      <span class="gear">${top.pick?`${gearShort(top.pick)}`:'<span style="color:var(--muted);font-weight:600">No gear fits</span>'}</span>
-      <span class="spot">${keys.length>1&&top.v!=='no'&&rides.length<2?`<button type="button" class="slink" data-goday="${date}" data-gospot="${top.k}"><span class="sn">${esc(SPOTS[top.k].name)}</span></button>`:''}</span></span>${spotLinks}
+      ${top.v==='no'?'<span class="gear"><span style="color:var(--muted);font-weight:600">No gear fits</span></span>':spotLinks}</span>
       <span class="strip" style="grid-template-columns:repeat(${inWin.length},minmax(0,1fr))">${strip}</span>
       <span class="meta"><span>${top.v==='no'?`Max ${fmtW(top.r.max)} ${UL()} · too ${top.r.max!=null&&st.gear.some(g=>g.on&&top.r.max>gearRange(g)[1])?'strong':'light'} for your gear`:`${hitWindow(top.r)} · ${fmtW(Math.min(...top.r.hit.size?[...top.r.hit].map(i=>top.d[1][i]):[0]))}–${fmtW(Math.max(...top.r.hit.size?[...top.r.hit].map(i=>top.d[1][i]):[0]))} ${UL()}`}</span><span>${dots}${top.ag.yes}/${top.ag.n} models agree</span></span>
     </div>`;
