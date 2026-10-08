@@ -384,6 +384,25 @@ body:not(.on-next) #seasonNote{display:none}
 .mini-row.moff .mini{opacity:.35}
 .sdays .empty{color:var(--muted);padding:14px 4px;margin:0}
 @media (max-width:380px){.scells .cell{font-size:11.5px}.mini-row .mini{font-size:9.5px}}
+
+.sdays{--lc:30px}
+.scells .rl{font:600 10px Barlow,sans-serif;color:var(--muted);display:flex;align-items:center;gap:3px;overflow:hidden;white-space:nowrap;min-width:0}
+.scells .rl i{display:inline-block;width:7px;height:7px;border-radius:2px;flex:none}
+.mrow{display:block;width:100%;background:none;border:0;padding:1px 0;margin:0;font:inherit;color:inherit;cursor:pointer;border-radius:4px;text-align:left}
+.mrow:hover{background:color-mix(in srgb,var(--sock) 7%,transparent)}
+.mrow:focus-visible{outline:2px solid var(--sock);outline-offset:1px}
+.mrow.off .rl{text-decoration:line-through}
+.mini-row{margin-top:2px}
+.mnote{font-size:11px;color:var(--muted);margin:4px 0 2px}
+.mreset{background:none;border:0;padding:0;color:var(--sock);font:600 11px Barlow,sans-serif;text-decoration:underline;cursor:pointer}
+@media (min-width:561px){.sdays{--lc:44px}.scells .rl{font-size:11px}}
+
+.scells .cell .nv{display:inline-flex;align-items:baseline;letter-spacing:-.02em}
+.scells .cell .dec,.mini .dec{font-size:.72em;font-weight:600;letter-spacing:0}
+.scells .rl .mc{border-left:3px solid var(--mc);padding-left:3px;line-height:1.1}
+.sdays{--lc:34px}
+@media (min-width:561px){.sdays{--lc:44px}}
+@media (max-width:400px){.scells .cell{font-size:12px}.scells .rl{font-size:9.5px}}
 </style>
 </head>
 <body>
@@ -939,10 +958,11 @@ function renderDays(){
   const vis=HOURS.map((h,i)=>st.allDay||win(i)), nVis=vis.filter(Boolean).length, V=a=>a.filter((_,i)=>vis[i]);
   const tcol=v=>v==null?'transparent':v>=25?'#F6B48F':v>=18?'#FAD7A8':v>=10?'#F3EBC8':v>=0?'#D6E8F3':'#B7D2EE';
   const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-  const cols=`style="grid-template-columns:repeat(${nVis},minmax(0,1fr))"`;
-  const row=(cells,cls='')=>`<div class="scells ${cls}" ${cols}>${V(cells).join('')}</div>`;
-  const sub=(lab,cells,cls='')=>`<div class="slab">${lab}</div>`+row(cells,'mini-row '+cls);
-  const hrs=`<div class="shrs" ${cols} aria-hidden="true">${V(HOURS).map(h=>`<span>${String(h).padStart(2,'0')}</span>`).join('')}</div>`;
+  const cols=`style="grid-template-columns:var(--lc) repeat(${nVis},minmax(0,1fr))"`;
+  const num=x=>{const t=fmtW(x); const m=String(t).match(/^(-?\d+)([.,]\d+)$/); return m?`${m[1]}<small class="dec">${m[2]}</small>`:t};
+  const row=(cells,cls='',lab='')=>`<div class="scells ${cls}" ${cols}><span class="rl">${lab}</span>${V(cells).join('')}</div>`;
+  const sub=(lab,cells,cls='')=>row(cells,'mini-row '+cls,lab);
+  const hrs=`<div class="shrs" ${cols} aria-hidden="true"><span></span>${V(HOURS).map(h=>`<span>${String(h).padStart(2,'0')}</span>`).join('')}</div>`;
   if(!shown.length){$('tbl').innerHTML=`<p class="empty">No rideable days with these settings. Add larger gear, lower the minimal temperature, widen the time of day, or shorten the duration.</p>`;$('more').hidden=true;return}
   // keep the existing order (newest first, then spot) and group spot-days by date
   const groups=[]; for(const x of shown.slice(0,st.limit)){ const g=groups[groups.length-1]; if(g&&g.date===x.d[0]) g.items.push(x); else groups.push({date:x.d[0],items:[x]}) }
@@ -959,16 +979,20 @@ function renderDays(){
       const ws=r.works.slice().sort((a,b)=>prefCmp(a.g,b.g));
       const pills=ws.length?ws.slice(0,3).map(w=>`<span class="pill" style="background:${gearColor(w.g)};color:${textOn(gearColor(w.g))}" title="${gearLabel(w.g)}: ${w.hours} h in range">${gearShort(w.g)}</span>`).join('')+(ws.length>3?`<span class="pill plus" title="Also works: ${ws.slice(3).map(w=>gearLabel(w.g)+' ('+w.hours+' h)').join(', ')}">+${ws.length-3}</span>`:''):'';
       const head=`<span class="ssn">${multi?esc(SPOTS[spot].name):''}</span><span class="vpill ${v}">${lbl[v]}</span><span class="pills">${pills}</span>${hasL?`<span class="car" aria-hidden="true">${open?'▾':'▸'}</span>`:''}`;
-      const cells=sp.map((x,i)=>`<div class="cell ${r.inWin[i]?'':'out'} ${r.hit.has(i)?'hit':''}" style="background:${color(x)};color:${colorFg(x)}" title="${String(HOURS[i]).padStart(2,'0')}h: ${fmtW(x)} ${UL()}${dr[i]!=null?' from '+sector(dr[i])+' ('+dr[i]+'°)':''}${gu&&gu[i]!=null?', gusts '+fmtW(gu[i])+' '+UL():''}${tp[i]!=null?', '+tp[i]+' °C':''}">${x==null?'–':fmtW(x)}${dr[i]!=null&&x!=null?arrow(dr[i]):''}</div>`);
-      const det=!open?'':(L.has('models')&&d[9]?META.blend.map(m=>{const mv=d[9][m], off=META.view==='combined'&&META.off.includes(m), cur=META.view===m;
-          return sub(`<i style="background:${modelColor(m)}"></i>${shortName(m)}${cur?' (shown)':off?' (off)':''} ${UL()}`,HOURS.map((h,i)=>`<div class="mini ${win(i)?'':'out'}" style="background:${color(mv&&mv[i])};color:${colorFg(mv&&mv[i])}">${mv&&mv[i]!=null?fmtW(mv[i]):'–'}</div>`),off?'moff':'')}).join(''):'')+
-        (L.has('gust')?sub(`gusts ${UL()}`,HOURS.map((h,i)=>`<div class="mini ${win(i)?'':'out'}" style="background:${color(gu&&gu[i])};color:${colorFg(gu&&gu[i])}">${gu&&gu[i]!=null?fmtW(gu[i]):'–'}</div>`)):'')+
-        (L.has('temp')?sub('air °C',HOURS.map((h,i)=>`<div class="mini ${win(i)?'':'out'}" style="background:${tcol(tp[i])}">${tp[i]??'–'}</div>`)):'')+
-        (L.has('cloud')?sub('clouds %',HOURS.map((h,i)=>{const c=d[7]&&d[7][i]; return `<div class="mini txt cloudbar ${win(i)?'':'out'}" title="${c!=null?c+'% cloud cover':'no cloud data'}"><i style="height:${c??0}%"></i><span>${c??'–'}</span></div>`})):'')+
-        (L.has('tide')&&d[8]?sub('tide m',HOURS.map((h,i)=>{const t=d[8][i]; return `<div class="mini txt ${win(i)?'':'out'}" title="Sea level vs mean sea level (not for navigation)">${t==null?'–':(t>0?'+':'')+t.toFixed(2)}</div>`})):'');
+      const cells=sp.map((x,i)=>`<div class="cell ${r.inWin[i]?'':'out'} ${r.hit.has(i)?'hit':''}" style="background:${color(x)};color:${colorFg(x)}" title="${String(HOURS[i]).padStart(2,'0')}h: ${fmtW(x)} ${UL()}${dr[i]!=null?' from '+sector(dr[i])+' ('+dr[i]+'°)':''}${gu&&gu[i]!=null?', gusts '+fmtW(gu[i])+' '+UL():''}${tp[i]!=null?', '+tp[i]+' °C':''}">${x==null?'–':`<span class="nv">${num(x)}</span>`}${dr[i]!=null&&x!=null?arrow(dr[i]):''}</div>`);
+      const det=!open?'':(L.has('models')&&d[9]?(()=>{const comb=META.view==='combined', act=comb?dayAct(spot,date):[META.view], edited=comb&&st.dayModels&&st.dayModels.has(spot+'|'+date);
+          return META.blend.map(m=>{const mv=d[9][m], off=!act.includes(m), short=shortName(m).split(' ')[0].slice(0,4);
+          const lab=`<span class="mc" style="--mc:${modelColor(m)}">${short}</span>`;
+          const cells=HOURS.map((h,i)=>`<div class="mini ${win(i)?'':'out'}" style="background:${color(mv&&mv[i])};color:${colorFg(mv&&mv[i])}">${mv&&mv[i]!=null?num(mv[i]):'–'}</div>`);
+          return comb?`<button type="button" class="mrow${off?' off':''}" data-dm="${spot}|${date}|${m}" aria-pressed="${!off}" title="${shortName(m)}: tap to ${off?'use it':'leave it out'} for this day only">${row(cells,'mini-row'+(off?' moff':''),lab)}</button>`:row(cells,'mini-row'+(off?' moff':''),lab)}).join('')+
+          (edited?`<div class="mnote">Blend changed for this day · <button type="button" class="mreset" data-dmr="${spot}|${date}">reset</button></div>`:comb?`<div class="mnote">Tap a model to leave it out of this day's blend</div>`:'')})():'')+
+        (L.has('gust')?sub('gust',HOURS.map((h,i)=>`<div class="mini ${win(i)?'':'out'}" style="background:${color(gu&&gu[i])};color:${colorFg(gu&&gu[i])}">${gu&&gu[i]!=null?num(gu[i]):'–'}</div>`)):'')+
+        (L.has('temp')?sub('°C',HOURS.map((h,i)=>`<div class="mini ${win(i)?'':'out'}" style="background:${tcol(tp[i])}">${tp[i]??'–'}</div>`)):'')+
+        (L.has('cloud')?sub('cloud',HOURS.map((h,i)=>{const c=d[7]&&d[7][i]; return `<div class="mini txt cloudbar ${win(i)?'':'out'}" title="${c!=null?c+'% cloud cover':'no cloud data'}"><i style="height:${c??0}%"></i><span>${c??'–'}</span></div>`})):'')+
+        (L.has('tide')&&d[8]?sub('tide',HOURS.map((h,i)=>{const t=d[8][i]; return `<div class="mini txt ${win(i)?'':'out'}" title="Sea level vs mean sea level (not for navigation)">${t==null?'–':(t>0?'+':'')+t.toFixed(2)}</div>`})):'');
       return `<div class="sspot${r.match?'':' miss'}${focusDay&&spot===st.focusSpot?' focus':''}" id="row-${spot}-${date}">`+
         (hasL?`<button type="button" class="ssh xbtn" data-x="${xk}" aria-expanded="${open}" aria-label="${open?'Hide':'Show'} details for ${multi?esc(SPOTS[spot].name)+', ':''}${fmtDate(date)}">${head}</button>`:`<div class="ssh">${head}</div>`)+
-        row(cells)+(det?`<div class="sdet">${det}</div>`:'')+`</div>`}).join('')+`</section>`}).join('');
+        row(cells,'',UL())+(det?`<div class="sdet">${det}</div>`:'')+`</div>`}).join('')+`</section>`}).join('');
   $('more').hidden=shown.length<=st.limit;
   $('more').textContent=`Show more days (${shown.length-st.limit} left)`;
 }
@@ -1348,6 +1372,15 @@ async function fetchTides(s,from,to){
   for(const [date,a] of by) s.tide[date]=Array.from({length:12},(_,k)=>{const v=[a[2*k],a[2*k+1]].filter(x=>x!=null); return v.length?Math.round(v.reduce((x,y)=>x+y,0)/v.length*100)/100:null});
 }
 // build the days the rest of the app uses: one model, or the weighted blend of the switched-on models
+// per-day model choice (Season details): key 'spot|date' -> Set of models used for that day only
+const dayModelsKey=(k,date)=>k+'|'+date;
+function dayAct(k,date){ const o=st.dayModels&&st.dayModels.get(dayModelsKey(k,date)); return o?META.blend.filter(m=>o.has(m)):activeModels() }
+function toggleDayModel(k,date,m){
+  st.dayModels=st.dayModels||new Map(); const key=dayModelsKey(k,date), cur=new Set(dayAct(k,date));
+  cur.has(m)?cur.delete(m):cur.add(m); if(!cur.size) return;
+  const glob=activeModels(); if(cur.size===glob.length&&glob.every(x=>cur.has(x))) st.dayModels.delete(key); else st.dayModels.set(key,cur);
+  buildDays(SPOTS[k]); update();
+}
 function buildDays(s){
   const tideOf=date=>s.tide&&s.tide[date]||null;
   s.idx={}; for(const m of META.blend){ s.idx[m]=new Map((s.m[m]||[]).map(d=>[d[0],d])) }
@@ -1359,7 +1392,8 @@ function buildDays(s){
   const act=activeModels(), dates=new Set(); act.forEach(m=>(s.m[m]||[]).forEach(d=>dates.add(d[0])));
   const out=[];
   for(const date of [...dates].sort()){
-    const dm=act.map(m=>[m,s.idx[m].get(date)]).filter(x=>x[1]); if(!dm.length) continue; const ds=dm.map(x=>x[1]), ws=dm.map(x=>mWt(x[0]));
+    const sk=Object.keys(SPOTS).find(x=>SPOTS[x]===s), dact=sk?dayAct(sk,date):act;
+    const dm=dact.map(m=>[m,s.idx[m].get(date)]).filter(x=>x[1]); if(!dm.length) continue; const ds=dm.map(x=>x[1]), ws=dm.map(x=>mWt(x[0]));
     const avg=(k,round)=>Array.from({length:12},(_,i)=>{let sv=0,sw=0; ds.forEach((d,j)=>{const v=d[k]&&d[k][i]; if(v!=null){sv+=v*ws[j]; sw+=ws[j]}}); return sw?round(sv/sw):null});
     const sp=avg(1,r1), gu=avg(4,r1), tp=avg(3,Math.round), cl=avg(7,Math.round);
     const dr=Array.from({length:12},(_,i)=>{let sx=0,sy=0,n=0; ds.forEach((d,j)=>{const a=d[2]&&d[2][i], w=d[1]&&d[1][i]; if(a!=null){const r=a*Math.PI/180, ww=Math.max(w??1,0.1)*ws[j]; sx+=Math.sin(r)*ww; sy+=Math.cos(r)*ww; n++}}); return n?Math.round((Math.atan2(sx,sy)*180/Math.PI+360)%360):null});
@@ -1564,7 +1598,10 @@ HOURS.forEach(h=>{[$('hFrom'),$('hTo')].forEach(s=>{const o=document.createEleme
 $('hFrom').value=st.hFrom; $('hTo').value=st.hTo;
 const setHours=()=>{let a=+$('hFrom').value,b=+$('hTo').value; if(a>b){[a,b]=[b,a];$('hFrom').value=a;$('hTo').value=b} st.hFrom=a;st.hTo=b;update()};
 $('hFrom').onchange=setHours; $('hTo').onchange=setHours;
-$('tbl').addEventListener('click',e=>{const b=e.target.closest('[data-x]'); if(!b) return; const k=b.dataset.x;
+$('tbl').addEventListener('click',e=>{
+  const mr=e.target.closest('[data-dmr]'); if(mr){ const [k,d]=mr.dataset.dmr.split('|'); st.dayModels&&st.dayModels.delete(k+'|'+d); buildDays(SPOTS[k]); update(); return }
+  const mb=e.target.closest('[data-dm]'); if(mb){ const [k,d,m]=mb.dataset.dm.split('|'); toggleDayModel(k,d,m); const nb=document.querySelector(`[data-dm="${CSS.escape(mb.dataset.dm)}"]`); nb&&nb.focus(); return }
+  const b=e.target.closest('[data-x]'); if(!b) return; const k=b.dataset.x;
   if(st.expandAll){ st.expandAll=false; st.expanded=new Set(results.map(x=>x.spot+'|'+x.d[0])); }
   st.expanded.has(k)?st.expanded.delete(k):st.expanded.add(k); renderDays();
   const nb=document.querySelector(`[data-x="${CSS.escape(k)}"]`); nb&&nb.focus();});
