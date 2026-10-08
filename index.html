@@ -129,6 +129,26 @@ tr.miss td{opacity:.35}
 .more[hidden]{display:none}
 .foot{color:var(--muted);font-size:13px;margin-top:18px;max-width:78ch}
 .riderRow{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px 24px;margin-bottom:16px;align-items:start}
+.wsBox{margin:-4px 0 14px}
+.wsHead{display:flex;align-items:center;gap:8px}
+.wsBox .hint{margin-top:2px}
+.wsList{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;align-items:center}
+.wsList[hidden]{display:none}
+.wsi{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);border-radius:6px;padding:3px 4px 3px 6px;background:var(--panel)}
+.wsi.off input[type=number],.wsi.off i{opacity:.5}
+.wsi input[type=number]{width:52px;padding:3px 4px;font-size:14px}
+.wsi i{font-style:normal;color:var(--muted);font-size:12px}
+.wsi .x{background:none;border:0;color:var(--muted);font-size:17px;line-height:1;padding:0 4px;cursor:pointer}
+.wsadd{padding:4px 10px}
+.wsug{display:flex;flex-direction:column;gap:3px;margin:2px 0 6px;padding:5px 6px;border-radius:6px;background:color-mix(in srgb,var(--sock) 6%,transparent)}
+.wsr{display:flex;align-items:center;gap:6px;font-size:12.5px;min-width:0;flex-wrap:wrap}
+.wsr .wsk{font-weight:700;min-width:46px;font-variant-numeric:tabular-nums}
+.wsr .wsk small{font-weight:500;color:var(--muted)}
+.wsr .pill{font-size:12px}
+.wsr .wsh{font-weight:600}
+.wsr .wsalt{color:var(--muted);display:inline-flex;align-items:center;gap:4px}
+.wsr .wsalt .gi{opacity:.8}
+.wsr .wsno{color:var(--muted)}
 .gearTbl th{vertical-align:bottom;line-height:1.2}
 .gearTbl input.w{width:64px}
 .gearTbl select.sm{min-width:0;width:auto}
@@ -575,6 +595,11 @@ body:not(.on-next) #seasonNote{display:none}
         <span class="hint">Stay-up only changes foil setups.</span>
       </div>
     </div>
+    <div class="wsBox">
+      <div class="wsHead"><label class="tgl"><input type="checkbox" id="wsOn" aria-describedby="wsHint"><span></span></label><label for="wsOn" class="lbl" style="margin:0">Weight suggestions</label></div>
+      <span class="hint" id="wsHint">Show in each day's details which gear fits best for other rider weights.</span>
+      <div class="wsList" id="wsList" hidden></div>
+    </div>
     <div class="gearList" id="gearBody"></div>
     <div class="row" style="margin-top:8px;gap:14px">
       <button class="btn ghost" id="addGear">Add gear</button>
@@ -718,7 +743,7 @@ body:not(.on-next) #seasonNote{display:none}
 </div></nav>
 
 <script>
-const APP_VERSION='3.38'; // app-<major>-<minor>; see the lake-wind-days-builds skill
+const APP_VERSION='3.39'; // app-<major>-<minor>; see the lake-wind-days-builds skill
 // ---- data store (Open-Meteo, cached in this browser)
 const DEFAULT_SPOTS={hlucin:{name:'Hlučín',lat:49.89,lon:18.17,tides:false},novemlyny:{name:'Nové Mlýny',lat:48.88,lon:16.68,tides:false},olesna:{name:'Olešná',lat:49.65,lon:18.30,tides:false}};
 // One catalogue for history (Historical Forecast API) and forecast (Forecast API).
@@ -859,7 +884,7 @@ const GEAR_DEFAULTS_VERSION=2;
 // rider + quiver are saved in this browser
 const GEAR_KEY='lakewind-gear-v1';
 function saveGear(){
-  try{ localStorage.setItem(GEAR_KEY,JSON.stringify({defaultsVersion:GEAR_DEFAULTS_VERSION,unit:st.unit,tUnit:st.tUnit||'c',weight:st.weight,skill:st.skill,suit:st.suit,lowMode:st.lowMode,prio:st.prio,
+  try{ localStorage.setItem(GEAR_KEY,JSON.stringify({defaultsVersion:GEAR_DEFAULTS_VERSION,unit:st.unit,tUnit:st.tUnit||'c',weight:st.weight,skill:st.skill,suit:st.suit,lowMode:st.lowMode,prio:st.prio,wSug:!!st.wSug,riders:st.riders,
     gear:st.gear.map(({id,...g})=>g)})) }catch(e){}
 }
 function loadGear(){
@@ -870,6 +895,8 @@ function loadGear(){
     if(s.unit==='kt'||s.unit==='ms') st.unit=s.unit;
     if(s.tUnit==='c'||s.tUnit==='f') st.tUnit=s.tUnit;
     if(s.weight>=40&&s.weight<=140) st.weight=s.weight;
+    if(typeof s.wSug==='boolean') st.wSug=s.wSug;
+    if(Array.isArray(s.riders)) st.riders=s.riders.filter(r=>r&&r.kg>=30&&r.kg<=160).slice(0,8).map(r=>({kg:Math.round(+r.kg),on:r.on!==false}));
     if(SKILL[s.skill]) st.skill=s.skill;
     if(s.suit!=null) st.suit=+s.suit;
     if(s.lowMode==='takeoff'||s.lowMode==='stay') st.lowMode=s.lowMode;
@@ -884,6 +911,7 @@ const st={
   mFrom:4,mTo:8,years:new Set(),
   prio:['fin','wingfoil','windfoil'],
   weight:100,skill:'intermediate',suit:0,lowMode:'takeoff',
+  wSug:false,riders:[{kg:70,on:true},{kg:85,on:true}],
   gear:defaultGear(),
   layers:new Set(['models','gust','temp','rain','cloud','tide']),expanded:new Set(),expandAll:false,dur:2,hFrom:8,hTo:18,unit:'kt',minT:18,dirs:Object.fromEntries(Object.keys(SPOTS).map(k=>[k,new Set(SECT)])),showAll:false,allDay:false,limit:150
 };
@@ -895,9 +923,9 @@ function refreshYears(){
 refreshYears();
 const $=id=>document.getElementById(id);
 
-function calcGear(g){
-  const T=TYPES[g.type], M=st.weight+g.gearKg+st.suit, A=Math.max(g.size,0.5);
-  const cBoard=Math.pow(Math.max(g.board,10)/st.weight/1.4,-0.15);
+function calcGear(g,w=st.weight){
+  const T=TYPES[g.type], M=w+g.gearKg+st.suit, A=Math.max(g.size,0.5);
+  const cBoard=Math.pow(Math.max(g.board,10)/w/1.4,-0.15);
   const cSkill=SKILL[st.skill][T.foil?'foil':'fin'];
   const rig=Math.sqrt(M/A);
   const out={M,warn:[]};
@@ -916,8 +944,12 @@ function calcGear(g){
   if(out.high<=out.low) out.high=out.low+1;
   return out;
 }
-function autoRange(g){ const c=calcGear(g); return [half(c.low),half(c.high)]; }
+function autoRange(g,w){ const c=calcGear(g,w); return [half(c.low),half(c.high)]; }
 function gearRange(g){ if(!g.manual){[g.low,g.high]=autoRange(g)} return [g.low,g.high]; }
+// wind range of a gear for another rider weight: automatic ranges are recalculated; a range set by hand is shifted by the same factor the automatic one changes
+function rangeAt(g,w){ if(w==null||w===st.weight) return gearRange(g);
+  const a=autoRange(g,w); if(!g.manual) return a;
+  const b=autoRange(g), [lo,hi]=gearRange(g); return [half(lo*a[0]/b[0]),half(hi*a[1]/b[1])] }
 const gearLabel=g=>{const dup=TYPES[g.type].foil&&st.gear.some(x=>x!==g&&x.type===g.type&&x.size===g.size);return `${TYPES[g.type].name} ${g.size} m²${dup?' / '+g.foil+' cm²':''}`};
 const SHORT={windfoil:'foil',wingfoil:'wing',fin:'fin'};
 const GI_SW='stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"';
@@ -950,18 +982,18 @@ const wd=s=>dObj(s).toLocaleDateString('en-GB',{weekday:'short'});
 const inMonths=m=>st.mFrom<=st.mTo?(m>=st.mFrom&&m<=st.mTo):(m>=st.mFrom||m<=st.mTo);
 const monthList=()=>{const a=[];let m=st.mFrom;for(let i=0;i<12;i++){a.push(m);if(m===st.mTo)break;m=(m+1)%12}return a};
 
-function evalDay(day,spot){
+function evalDay(day,spot,w){
   const [date,sp,dr,tp]=day;
   const inWin=HOURS.map(h=>h>=st.hFrom&&h<=st.hTo);
   const base=sp.map((v,i)=>inWin[i]&&v!=null&&dr[i]!=null&&st.dirs[spot].has(sector(dr[i]))&&(st.minT==null||(tp[i]!=null&&tp[i]>=st.minT)));
   const hit=new Set(), works=[];
   for(const g of st.gear){ if(!g.on) continue;
-    const [lo,hi]=gearRange(g);
+    const [lo,hi]=rangeAt(g,w);
     const ok=sp.map((v,i)=>base[i]&&v>=lo&&v<=hi);
-    let s=0,best=0;
-    for(let i=0;i<=ok.length;i++){ if(i<ok.length&&ok[i]) continue; const len=i-s; if(len>best) best=len;
+    let s=0,best=0,bs=0;
+    for(let i=0;i<=ok.length;i++){ if(i<ok.length&&ok[i]) continue; const len=i-s; if(len>best){best=len;bs=s}
       if(len>=st.dur) for(let k=s;k<i;k++) hit.add(k); s=i+1; }
-    if(best>=st.dur) works.push({g,hours:best*2});
+    if(best>=st.dur) works.push({g,hours:best*2,from:HOURS[bs],to:HOURS[bs+best-1]+2});
   }
   works.sort((a,b)=>b.hours-a.hours);
   const wv=sp.filter((v,i)=>inWin[i]&&v!=null), tv=tp.filter((v,i)=>inWin[i]&&v!=null);
@@ -1032,6 +1064,23 @@ function renderSummary(){
   $('gearUse').innerHTML = on.length ? `Columns show the average rideable days per month across the selected years, split by the gear you'd use that day (gear preference: ${st.prio.map(p=>TYPES[p].name.toLowerCase()).join(' > ')}, then the smallest rig that works). All spots share the same scale. Hover a column for exact numbers.` : 'Turn on at least one gear to find rideable days.';
 }
 
+// weight suggestions: which gear fits best for each switched-on rider weight
+const wsList=()=>st.wSug?st.riders.filter(r=>r.on).map(r=>r.kg):[];
+const hh=h=>String(h%24).padStart(2,'0');
+function wsBlock(d,spot){
+  return `<div class="wsug" role="list" aria-label="Best gear per rider weight">`+wsList().map(kg=>{
+    const ws=evalDay(d,spot,kg).works.slice().sort((a,b)=>prefCmp(a.g,b.g)), b=ws[0];
+    const pill=g=>`<span class="pill" style="background:${gearColor(g)};color:${textOn(gearColor(g))}">${gearShort(g)}</span>`;
+    const body=b?`${pill(b.g)}<span class="wsh">${hh(b.from)}–${hh(b.to)}h</span>${ws.length>1?`<span class="wsalt">also ${ws.slice(1,3).map(w=>gearShort(w.g)).join(' ')}${ws.length>3?' +'+(ws.length-3):''}</span>`:''}`:`<span class="wsno">no gear fits</span>`;
+    const tip=b?`${kg} kg: ${gearLabel(b.g)}, ${b.hours} h in range (${hh(b.from)}–${hh(b.to)}h)${ws.length>1?'. Also works: '+ws.slice(1).map(w=>gearLabel(w.g)+' ('+w.hours+' h)').join(', '):''}`:`${kg} kg: none of your gear is in range long enough`;
+    return `<div class="wsr${b?'':' no'}" role="listitem" title="${tip}"><span class="wsk">${kg}<small> kg</small></span>${body}</div>`}).join('')+`</div>`;
+}
+function renderWs(){
+  const box=$('wsList'); if(!box) return;
+  $('wsOn').checked=!!st.wSug; box.hidden=!st.wSug;
+  box.innerHTML=st.riders.map((r,i)=>`<span class="wsi${r.on?'':' off'}"><label class="tgl" title="${r.on?'Shown':'Hidden'}"><input type="checkbox" data-wi="${i}" data-k="on" ${r.on?'checked':''} aria-label="Show suggestions for ${r.kg} kg"><span></span></label><input type="number" data-wi="${i}" data-k="kg" value="${r.kg}" min="30" max="160" step="1" aria-label="Rider weight ${i+1} in kg"><i>kg</i><button type="button" class="x" data-wi="${i}" data-k="del" aria-label="Remove ${r.kg} kg" title="Remove">×</button></span>`).join('')+
+    (st.riders.length<8?`<button type="button" class="btn ghost wsadd" id="wsAdd">+ Weight</button>`:'');
+}
 function renderDays(){
   const hits=results.filter(x=>x.r.match);
   $('count').innerHTML=`${hits.length} <small>rideable of ${results.length} spot-days</small>`;
@@ -1062,13 +1111,13 @@ function renderDays(){
     return `<section class="sday${offS?' offs':''}${focusDay?' focus':''}" id="day-${date}"><div class="sdh"><b>${wd(date)} ${dObj(date).toLocaleDateString('en-GB',{day:'numeric',month:'short'})}</b><small>${date.slice(0,4)}</small>${tag}</div>`+
     items.map(({spot,d,r})=>{
       const [,sp,dr,tp,gu]=d;
-      const xk=spot+'|'+date, open=st.expandAll||st.expanded.has(xk), hasL=[...L].some(k=>k==='tide'?d[8]:k==='models'?d[9]:true);
+      const xk=spot+'|'+date, open=st.expandAll||st.expanded.has(xk), wOn=wsList(), hasL=wOn.length>0||[...L].some(k=>k==='tide'?d[8]:k==='models'?d[9]:true);
       const v=r.match?'ride':verdictFor(d,spot).v;
       const ws=r.works.slice().sort((a,b)=>prefCmp(a.g,b.g));
       const pills=ws.length?ws.slice(0,3).map(w=>`<span class="pill" style="background:${gearColor(w.g)};color:${textOn(gearColor(w.g))}" title="${gearLabel(w.g)}: ${w.hours} h in range">${gearShort(w.g)}</span>`).join('')+(ws.length>3?`<span class="pill plus" title="Also works: ${ws.slice(3).map(w=>gearLabel(w.g)+' ('+w.hours+' h)').join(', ')}">+${ws.length-3}</span>`:''):'';
       const head=`<span class="ssn">${multi?esc(SPOTS[spot].name):''}</span><span class="vpill ${v}">${lbl[v]}</span><span class="pills">${pills}</span>${hasL?`<span class="car" aria-hidden="true">${open?'▾':'▸'}</span>`:''}`;
       const cells=sp.map((x,i)=>`<div class="cell ${r.inWin[i]?'':'out'} ${r.hit.has(i)?'hit':''}" style="background:${color(x)};color:${colorFg(x)}" title="${String(HOURS[i]).padStart(2,'0')}h: ${fmtW(x)} ${UL()}${dr[i]!=null?' from '+sector(dr[i])+' ('+dr[i]+'°)':''}${gu&&gu[i]!=null?', gusts '+fmtW(gu[i])+' '+UL():''}${tp[i]!=null?', '+toT(tp[i])+' '+TL():''}${d[11]&&d[11][i]?', rain '+d[11][i]+' mm':''}">${x==null?'–':`<span class="nv">${num(x)}</span>`}${dr[i]!=null&&x!=null?arrow(dr[i]):''}</div>`);
-      const det=!open?'':(L.has('models')&&d[9]?(()=>{const comb=META.view==='combined', act=comb?dayAct(spot,date):[META.view], edited=comb&&st.dayModels&&st.dayModels.has(spot+'|'+date);
+      const det=!open?'':(wOn.length?wsBlock(d,spot):'')+(L.has('models')&&d[9]?(()=>{const comb=META.view==='combined', act=comb?dayAct(spot,date):[META.view], edited=comb&&st.dayModels&&st.dayModels.has(spot+'|'+date);
           return META.blend.map(m=>{const mv=d[9][m], off=!act.includes(m), short=shortName(m).split(' ')[0].slice(0,4);
           const lab=`<span class="mc" style="--mc:${modelColor(m)}">${short}</span>`;
           const cells=HOURS.map((h,i)=>`<div class="mini ${win(i)?'':'out'}" style="background:${color(mv&&mv[i])};color:${colorFg(mv&&mv[i])}">${mv&&mv[i]!=null?num(mv[i]):'–'}</div>`);
@@ -1305,7 +1354,7 @@ function panelSums(){
   S('data',`${ks.length} spot${ks.length!==1?'s':''}${got<ks.length?` · <b>${ks.length-got} without data</b>`:''} · ${viewLabel()}${last?' · updated '+new Date(last).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):''}${$('dataStatus')&&$('dataStatus').textContent?' · '+$('dataStatus').textContent:''}`);
   S('where',`${Object.keys(SPOTS).filter(k=>st.spots.has(k)).map(k=>SPOTS[k].name).join(', ')} · ${MONTHS[st.mFrom]}–${MONTHS[st.mTo]} · ${[...st.years].sort().join(', ')}`);
   const on=st.gear.filter(g=>g.on);
-  S('gear',`${st.weight} kg · ${on.length} of ${st.gear.length} gear on${on.length?': '+on.map(gearShort).join(', '):''}`);
+  S('gear',`${st.weight} kg${wsList().length?' · tips for '+wsList().join(', ')+' kg':''} · ${on.length} of ${st.gear.length} gear on${on.length?': '+on.map(gearShort).join(', '):''}`);
   const dirsSet=Object.keys(SPOTS).filter(k=>st.spots.has(k)&&st.dirs[k]&&st.dirs[k].size<8).length;
   S('cond',`${st.dur*2} h+ · ${String(st.hFrom).padStart(2,'0')}–${String(st.hTo).padStart(2,'0')}h · ${st.minT==null?'any temp':'≥ '+toT(st.minT)+' '+TL()}${dirsSet?` · direction limited at ${dirsSet} spot${dirsSet>1?'s':''}`:''} · ${UL()}`);
   S('sum',`${results.filter(x=>x.r.match).length} rideable spot-days`);
@@ -1816,6 +1865,14 @@ $('mFrom').value=st.mFrom; $('mTo').value=st.mTo;
 $('mFrom').onchange=e=>{st.mFrom=+e.target.value;update()};
 $('mTo').onchange=e=>{st.mTo=+e.target.value;update()};
 $('weight').oninput=e=>{st.weight=+e.target.value;$('wOut').value=st.weight;renderGear();update()};
+$('wsOn').onchange=e=>{st.wSug=e.target.checked; renderWs(); saveGear(); update()};
+$('wsList').addEventListener('click',e=>{
+  if(e.target.closest('#wsAdd')){ const last=st.riders[st.riders.length-1]; st.riders.push({kg:Math.min(160,(last?last.kg:st.weight)+10),on:true}); renderWs(); saveGear(); update(); const ins=$('wsList').querySelectorAll('input[data-k=kg]'); ins[ins.length-1]&&ins[ins.length-1].focus(); return }
+  const t=e.target.closest('[data-k=del]'); if(t){ st.riders.splice(+t.dataset.wi,1); renderWs(); saveGear(); update() } });
+$('wsList').addEventListener('change',e=>{ const t=e.target, i=+t.dataset.wi; if(!st.riders[i]) return;
+  if(t.dataset.k==='on') st.riders[i].on=t.checked;
+  if(t.dataset.k==='kg'){ const v=Math.round(+t.value); if(v>=30&&v<=160) st.riders[i].kg=v; else t.value=st.riders[i].kg }
+  renderWs(); saveGear(); update() });
 $('skill').onchange=e=>{st.skill=e.target.value;renderGear();update()};
 $('suit').onchange=e=>{st.suit=+e.target.value;renderGear();update()};
 $('lowMode').onchange=e=>{st.lowMode=e.target.value;renderGear();update()};
@@ -1853,7 +1910,7 @@ try{ st.allDay=localStorage.getItem('lakewind-allday')==='1' }catch(e){} $('allD
 $('allDay').onchange=e=>{st.allDay=e.target.checked; try{localStorage.setItem('lakewind-allday',st.allDay?'1':'0')}catch(err){} renderDays()};
 $('more').onclick=()=>{st.limit+=300;renderDays()};
 initFolds(); { let tb='next'; try{tb=localStorage.getItem(TAB_KEY)||'next'}catch(e){} showTab(['next','season','quiver','spots'].includes(tb)?tb:'next') }
-loadGear(); $('weight').value=st.weight; $('wOut').value=st.weight; $('skill').value=st.skill; $('suit').value=String(st.suit); $('lowMode').value=st.lowMode;
+loadGear(); $('weight').value=st.weight; $('wOut').value=st.weight; renderWs(); $('skill').value=st.skill; $('suit').value=String(st.suit); $('lowMode').value=st.lowMode;
 try{ minTLabel() }catch(e){}
 unitChips(); layerChips(); renderPrio(); renderGear(); renderBlend(); afterDataChange();
 (async()=>{ await loadBulk(); rebuildAll(); afterDataChange();
