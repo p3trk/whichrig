@@ -273,6 +273,12 @@ body:not(.on-next) #seasonNote{display:none}
 .vpill.ride{background:var(--ride);color:var(--rideT)}.vpill.maybe{background:var(--maybe);color:var(--maybeT)}.vpill.no{background:var(--no);color:var(--noT)}
 .dcard .gear{font-size:14px;font-weight:700}
 .dcard .spot{margin-left:auto;font-size:13px;color:var(--muted);white-space:nowrap}
+.dcard .slink{font:600 13px Barlow,sans-serif;color:var(--sock);background:none;border:0;padding:2px 0;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:4px}
+.dcard .slink .sn{text-decoration:underline;text-underline-offset:2px}
+.dcard .slink:hover{color:var(--ink)}
+.dcard .slink .sg{color:var(--ink);font-weight:700;text-decoration:none;display:inline-flex;align-items:center}
+.dcard .spots{display:flex;flex-wrap:wrap;align-items:center;gap:2px 14px;font-size:13px}
+.dcard .spots .lab{color:var(--muted);font-size:12px}
 .strip{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:2px}
 .strip span{height:8px;border-radius:2px}
 .dcard .meta{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--muted)}
@@ -573,7 +579,7 @@ body:not(.on-next) #seasonNote{display:none}
 </div></nav>
 
 <script>
-const APP_VERSION='3.27'; // app-<major>-<minor>; see the lake-wind-days-builds skill
+const APP_VERSION='3.28'; // app-<major>-<minor>; see the lake-wind-days-builds skill
 // ---- data store (Open-Meteo, cached in this browser)
 const DEFAULT_SPOTS={hlucin:{name:'Hlučín',lat:49.89,lon:18.17,tides:false},novemlyny:{name:'Nové Mlýny',lat:48.88,lon:16.68,tides:false},olesna:{name:'Olešná',lat:49.65,lon:18.30,tides:false}};
 // One catalogue for history (Historical Forecast API) and forecast (Forecast API).
@@ -1111,14 +1117,17 @@ function renderNext(){
     const strip=inWin.map(i=>`<span style="background:${color(top.d[1][i])}" title="${String(HOURS[i]).padStart(2,'0')}h ${fmtW(top.d[1][i])} ${UL()}"></span>`).join('');
     const dots=`<span class="dots" aria-hidden="true">${Array.from({length:top.ag.n},(_,i)=>`<i class="${i<top.ag.yes?'y':''}"></i>`).join('')}</span>`;
     const lbl={ride:'Ride',maybe:'Maybe',no:'No'};
-    return divider+`<button type="button" class="dcard${off?' off':''}" data-card="${date}" data-spot="${top.k}" aria-label="${dObj(date).toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'})}, ${SPOTS[top.k].name}: ${lbl[top.v]}. Open this day in Season"><span class="top">
-      <span class="dd">${dObj(date).toLocaleDateString('en-GB',{weekday:'short'})} ${+date.slice(8)}${off?'<em class="offtag">off-season</em>':''}</span>
+    const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    const rides=per.filter(x=>x.v==='ride');
+    const spotLinks=rides.length>1?`<span class="spots"><span class="lab">Rideable at</span>${rides.map(x=>`<button type="button" class="slink" data-goday="${date}" data-gospot="${x.k}" title="Open ${esc(SPOTS[x.k].name)} on this day in Season"><span class="sn">${esc(SPOTS[x.k].name)}</span>${x.pick?` <span class="sg">${gearShort(x.pick)}</span>`:''}</button>`).join('')}</span>`:'';
+    return divider+`<div role="button" tabindex="0" class="dcard${off?' off':''}" data-card="${date}" data-spot="${top.k}" aria-label="${dObj(date).toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'})}, ${SPOTS[top.k].name}: ${lbl[top.v]}. Open this day in Season"><span class="top">
+      <span class="dd">${dObj(date).toLocaleDateString('en-GB',{weekday:'short'})} ${+date.slice(8)}</span>
       <span class="vpill ${top.v}">${lbl[top.v]}</span>
       <span class="gear">${top.pick?`<i class="gdot" style="background:${gearColor(top.pick)}"></i>${gearShort(top.pick)}`:'<span style="color:var(--muted);font-weight:600">No gear fits</span>'}</span>
-      <span class="spot">${keys.length>1&&top.v!=='no'?SPOTS[top.k].name:''}</span></span>
+      <span class="spot">${keys.length>1&&top.v!=='no'&&rides.length<2?`<button type="button" class="slink" data-goday="${date}" data-gospot="${top.k}"><span class="sn">${esc(SPOTS[top.k].name)}</span></button>`:''}</span></span>${spotLinks}
       <span class="strip" style="grid-template-columns:repeat(${inWin.length},minmax(0,1fr))">${strip}</span>
       <span class="meta"><span>${top.v==='no'?`Max ${fmtW(top.r.max)} ${UL()} · too ${top.r.max!=null&&st.gear.some(g=>g.on&&top.r.max>gearRange(g)[1])?'strong':'light'} for your gear`:`${hitWindow(top.r)} · ${fmtW(Math.min(...top.r.hit.size?[...top.r.hit].map(i=>top.d[1][i]):[0]))}–${fmtW(Math.max(...top.r.hit.size?[...top.r.hit].map(i=>top.d[1][i]):[0]))} ${UL()}`}</span><span>${dots}${top.ag.yes}/${top.ag.n} models agree</span></span>
-    </button>`;
+    </div>`;
   });
   $('nextBig').innerHTML=`${rideDays} rideable day${rideDays!==1?'s':''} <span>in the next ${dates.length}</span>`;
   $('nextSmall').innerHTML=best?`Best: ${dObj(best.date).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})} at ${SPOTS[best.k].name.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}<br>${best.pick.size} ${SHORT[best.pick.type]} ${hitWindow(best.r)} · ${best.ag.yes}/${best.ag.n} models agree`:(st.gear.some(g=>g.on)?'Nothing rideable with the gear that is switched on.':'Switch on at least one piece of gear.');
@@ -1126,7 +1135,8 @@ function renderNext(){
   const sline=ss.state==='in'?(offN?`Your season (${seasonName()}) ends ${longDate(ss.end)}; ${offN} of these days ${offN>1?'are':'is'} after it.`:''):ss.state==='after'?`Off-season: your season (${seasonName()}) ended ${longDate(ss.end)}.`:`Off-season: your season (${seasonName()}) starts ${longDate(ss.start)}.`;
   $('seasonNote').hidden=!sline; $('seasonNote').className='snote '+(ss.state==='in'?'in':'out'); $('seasonNote').textContent=sline;
   $('dcards').innerHTML=cards.join('');
-  $('dcards').querySelectorAll('[data-card]').forEach(b=>b.onclick=()=>openDay(b.dataset.card,b.dataset.spot));
+  $('dcards').querySelectorAll('[data-card]').forEach(b=>{ b.onclick=e=>{ const l=e.target.closest('[data-goday]'); if(l) openDay(l.dataset.goday,l.dataset.gospot); else openDay(b.dataset.card,b.dataset.spot) };
+    b.onkeydown=e=>{ if(e.target===b&&(e.key==='Enter'||e.key===' ')){ e.preventDefault(); openDay(b.dataset.card,b.dataset.spot) } } });
 }
 st.calSpot=null;
 function openDay(date,spot){
