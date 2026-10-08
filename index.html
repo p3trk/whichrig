@@ -464,6 +464,7 @@ body:not(.on-next) #seasonNote{display:none}
 .prioBox{margin:4px 0 16px;padding-bottom:14px;border-bottom:1px solid var(--line)}
 .prioBox .lbl{margin-bottom:8px}
 .fold[open]>summary+.prioBox{margin-top:0}
+#p-cov .cov{border-top:0;margin-top:0;padding-top:0}
 </style>
 </head>
 <body>
@@ -487,6 +488,14 @@ body:not(.on-next) #seasonNote{display:none}
     <div class="sechead" id="calHead"></div>
     <div class="row" id="calSpots" role="group" aria-label="Spot" style="margin-bottom:10px"></div>
     <div class="cal"><div id="calBody"></div><div class="gbars" id="calBars"></div></div>
+    <details class="panel fold" id="p-cov" data-sec="cov">
+    <summary><h2 id="h-cov">Wind coverage</h2><span class="psum" id="s-cov"></span></summary>
+      <div class="cov">
+        <div class="covHead"><span class="status" id="covStat"></span><span class="typeCounts" id="typeCounts"></span></div>
+        <div id="covChart"></div>
+        <span class="hint">Each calendar day counts once, even when several spots are selected, and is placed at the best spot's sustained wind (the strongest wind that held for the chosen duration within your hours, temperature and direction filters). Every rideable day is given to one gear by your gear preference in the Gear tab (first type that works, then the smallest rig of that type). Coloured parts of each bar and the percentages on the right show that gear usage; grey is days your gear doesn't cover. Hover a bar for counts.</span>
+      </div>
+    </details>
     <details class="panel fold" id="p-sum" data-sec="sum">
     <summary><h2 id="h-sum">Rideable days per month</h2><span class="psum" id="s-sum"></span></summary>
     <div id="sumSpots"></div>
@@ -555,11 +564,6 @@ body:not(.on-next) #seasonNote{display:none}
         <p>Top of the range is the lower of two limits. The rig limit is when the sail or wing is overpowered: 4.3 (windfoil), 5.5 (wingfoil) or 6.2 (fin) × √(M / rig m²). The foil limit is its comfortable top speed, about 2.25 × v<sub>to</sub>, taken as the same wind speed. Both top-end limits are estimates; type your own range to override.</p>
         <p>Warnings: v<sub>to</sub> above 12 kt means the foil is small for your weight, below 5 kt it is very big and slow. Results below 8 kt are extrapolated and likely optimistic.</p>
       </details>
-    </div>
-    <div class="cov">
-      <div class="covHead"><span class="lbl" style="margin:0">Wind coverage</span><span class="status" id="covStat"></span><span class="typeCounts" id="typeCounts"></span></div>
-      <div id="covChart"></div>
-      <span class="hint">Each calendar day counts once, even when several spots are selected, and is placed at the best spot's sustained wind (the strongest wind that held for the chosen duration within your hours, temperature and direction filters). Every rideable day is given to one gear by the gear preference above (first type that works, then the smallest rig of that type). Coloured parts of each bar and the percentages on the right show that gear usage; grey is days your gear doesn't cover. Hover a bar for counts.</span>
     </div>
   </details>
   </section>
@@ -693,7 +697,7 @@ body:not(.on-next) #seasonNote{display:none}
 </div></nav>
 
 <script>
-const APP_VERSION='3.34'; // app-<major>-<minor>; see the lake-wind-days-builds skill
+const APP_VERSION='3.35'; // app-<major>-<minor>; see the lake-wind-days-builds skill
 // ---- data store (Open-Meteo, cached in this browser)
 const DEFAULT_SPOTS={hlucin:{name:'Hlučín',lat:49.89,lon:18.17,tides:false},novemlyny:{name:'Nové Mlýny',lat:48.88,lon:16.68,tides:false},olesna:{name:'Olešná',lat:49.65,lon:18.30,tides:false}};
 // One catalogue for history (Historical Forecast API) and forecast (Forecast API).
@@ -1281,12 +1285,13 @@ function panelSums(){
   const dirsSet=Object.keys(SPOTS).filter(k=>st.spots.has(k)&&st.dirs[k]&&st.dirs[k].size<8).length;
   S('cond',`${st.dur*2} h+ · ${String(st.hFrom).padStart(2,'0')}–${String(st.hTo).padStart(2,'0')}h · ${st.minT==null?'any temp':'≥ '+toT(st.minT)+' '+TL()}${dirsSet?` · direction limited at ${dirsSet} spot${dirsSet>1?'s':''}`:''} · ${UL()}`);
   S('sum',`${results.filter(x=>x.r.match).length} rideable spot-days`);
+  S('cov',($('covStat')&&$('covStat').textContent)||'');
 }
 function initFolds(){
   let saved={}; try{ saved=JSON.parse(localStorage.getItem(FOLD_KEY)||'{}') }catch(e){}
   document.querySelectorAll('details.fold').forEach(d=>{ d.open=saved[d.dataset.sec]!==false;
     d.addEventListener('toggle',()=>{ saved[d.dataset.sec]=d.open; try{ localStorage.setItem(FOLD_KEY,JSON.stringify(saved)) }catch(e){}
-      if(d.open) { if(d.dataset.sec==='gear') renderCoverage(); if(d.dataset.sec==='sum') renderSummary() } }) });
+      if(d.open) { if(d.dataset.sec==='gear'||d.dataset.sec==='cov') renderCoverage(); if(d.dataset.sec==='sum') renderSummary() } }) });
 }
 const inSeason=date=>inMonths(+date.slice(5,7)-1);
 const seasonName=()=>`${MONTHS[st.mFrom]}–${MONTHS[st.mTo]}`;
