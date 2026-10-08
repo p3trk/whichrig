@@ -718,7 +718,7 @@ body:not(.on-next) #seasonNote{display:none}
 </div></nav>
 
 <script>
-const APP_VERSION='3.36'; // app-<major>-<minor>; see the lake-wind-days-builds skill
+const APP_VERSION='3.37'; // app-<major>-<minor>; see the lake-wind-days-builds skill
 // ---- data store (Open-Meteo, cached in this browser)
 const DEFAULT_SPOTS={hlucin:{name:'Hlučín',lat:49.89,lon:18.17,tides:false},novemlyny:{name:'Nové Mlýny',lat:48.88,lon:16.68,tides:false},olesna:{name:'Olešná',lat:49.65,lon:18.30,tides:false}};
 // One catalogue for history (Historical Forecast API) and forecast (Forecast API).
@@ -1414,19 +1414,19 @@ function renderCalendar(){
     if(!inRange){ cells.push('<span style="visibility:hidden"></span>'); continue }
     if(x&&x.r.match){ const g=x.r.works.map(w=>w.g).sort(prefCmp)[0]; bg=gearColor(g); cnt.set(g,(cnt.get(g)||0)+1); total++; tip+=`${g.size} ${SHORT[g.type]}` } else tip+=x?'not rideable':'no data';
     calDays.push({iso,x});
-    cells.push(x?`<button type="button" class="cd" data-cd="${iso}" data-iso="${iso}" tabindex="-1" aria-label="${tip}. Open this day"${bg?` style="background:${bg}"`:''}></button>`:`<span data-iso="${iso}"${bg?` style="background:${bg}"`:''}></span>`) }
+    cells.push(x?`<button type="button" class="cd" data-cd="${iso}" data-iso="${iso}" title="${tip} · open this day" aria-label="${tip}. Open this day"${bg?` style="background:${bg}"`:''}></button>`:`<span data-iso="${iso}" title="${tip}"${bg?` style="background:${bg}"`:''}></span>`) }
   const monthLbl=weeks.map(w=>{const e=new Date(w); e.setDate(e.getDate()+6); return ((e.getDate()<=7&&e>=first)||(w<=first&&e>=first))&&e<=last?`<span>${e.toLocaleDateString('en-GB',{month:'short'})}</span>`:'<span></span>'}).join('');
   $('calHead').textContent=`${SPOTS[st.calSpot].name}: ${total} rideable day${total!==1?'s':''} in ${year}`;
   { const ss=seasonState(); const b=$('seasonBanner'); b.hidden=false;
     if(ss.state==='in'){ const left=Math.round((dObj(ss.end)-dObj(todayISO()))/864e5); b.className='snote in'; b.innerHTML=`<b>Season in progress</b> · ${seasonName()} · ${left} day${left!==1?'s':''} left (ends ${longDate(ss.end)})` }
     else if(ss.state==='after'){ b.className='snote out'; b.innerHTML=`<b>Season over</b> · ${seasonName()} ended ${longDate(ss.end)}. Days after it are marked “off-season”.` }
     else { b.className='snote out'; b.innerHTML=`<b>Off-season</b> · your season (${seasonName()}) starts ${longDate(ss.start)}.` } }
-  $('calBody').innerHTML=`<div class="calmonths" style="grid-template-columns:repeat(${weeks.length},minmax(0,1fr))">${monthLbl}</div><div class="calgrid" style="grid-template-columns:repeat(${weeks.length},minmax(0,1fr))" role="group" tabindex="0" aria-label="Calendar of rideable days in ${year}, coloured by gear. Tap a day to open it, hold and slide to pick a day, or use the arrow keys">${cells.join('')}</div>`;
+  $('calBody').innerHTML=`<div class="calmonths" style="grid-template-columns:repeat(${weeks.length},minmax(0,1fr))">${monthLbl}</div><div class="calgrid" style="grid-template-columns:repeat(${weeks.length},minmax(0,1fr))" role="group" aria-label="Calendar of rideable days in ${year}, coloured by gear. Tap a day to open it; on a phone, hold and slide to pick a day">${cells.join('')}</div>`;
   calDays.sort((a,b)=>a.iso<b.iso?-1:1); calScrub.days=calDays; calScrub.idx=new Map(calDays.map((d,i)=>[d.iso,i])); calHide();
   const mx=Math.max(1,...cnt.values());
   $('calBars').innerHTML=[...cnt.entries()].sort((a,b)=>b[1]-a[1]).map(([g,n])=>`<div class="gbar"><div class="row1"><span style="font-weight:600">${gearIcon(g.type)}${gearLabel(g)}</span><b>${n} d</b></div><div class="trk"><i style="width:${Math.round(n/mx*100)}%;background:${gearColor(g)}"></i></div></div>`).join('')||'<span class="status">No rideable days with these settings.</span>';
 }
-// ---- calendar scrub: hold a day to zoom in, slide left/right to move day by day, release to open ----
+// ---- calendar scrub (touch screens only): hold a day to zoom in, slide left/right to move day by day, release to open ----
 const calScrub={days:[],idx:new Map(),sel:-1,active:false,cancel:false,timer:null,sx:0,sy:0,startI:0,suppressClick:0};
 function calDayInfo(i){ const d=calScrub.days[i]; if(!d) return null; const x=d.x, g=x&&x.r.match?x.r.works.map(w=>w.g).sort(prefCmp)[0]:null; return {...d,g} }
 function calLoupeHTML(center){
@@ -1475,19 +1475,6 @@ function calOpenSel(){ const d=calScrub.days[calScrub.sel]; calHide(); if(d&&d.x
   body.addEventListener('contextmenu',e=>{ if(e.target.closest('[data-iso]')) e.preventDefault() });
   // a tap (or click) still opens the day; ignore the click that follows a scrub
   body.addEventListener('click',e=>{ const b=e.target.closest('[data-cd]'); if(!b) return; if(Date.now()-calScrub.suppressClick<600) return; calHide(); openDay(b.dataset.cd,st.calSpot) });
-  // mouse: hover shows the zoomed strip
-  body.addEventListener('mousemove',e=>{ if(calScrub.active) return; const iso=isoAt(e.clientX,e.clientY); if(iso&&calScrub.idx.get(iso)!==calScrub.sel) calShow(calScrub.idx.get(iso)) });
-  body.addEventListener('mouseleave',()=>{ if(!calScrub.active&&document.activeElement!==body.querySelector('.calgrid')) calHide() });
-  // keyboard: focus the grid, arrows move by day / week, Enter opens, Esc closes
-  body.addEventListener('keydown',e=>{
-    if(!e.target.classList.contains('calgrid')) return;
-    const step={ArrowLeft:-1,ArrowRight:1,ArrowUp:-7,ArrowDown:7}[e.key];
-    if(step){ e.preventDefault(); calShow((calScrub.sel<0?0:calScrub.sel)+step); return }
-    if(e.key==='Enter'&&calScrub.sel>=0){ e.preventDefault(); calOpenSel() }
-    if(e.key==='Escape') calHide();
-  });
-  body.addEventListener('focusin',e=>{ if(e.target.classList.contains('calgrid')&&calScrub.sel<0&&calScrub.days.length){ const last=calScrub.days.map(d=>!!(d.x&&d.x.r.match)).lastIndexOf(true); calShow(last>=0?last:calScrub.days.length-1) } });
-  body.addEventListener('focusout',e=>{ if(e.target.classList.contains('calgrid')) calHide() });
 })();
 function renderWhen(){
   if($('appVer')) $('appVer').textContent='v'+APP_VERSION;
