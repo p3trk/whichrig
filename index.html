@@ -1622,7 +1622,7 @@ function unitChips(){
   chips($('units'),[['kt','kt'],['ms','m/s']],u=>st.unit===u,setUnit);
   const hu=$('hdrUnit'); if(hu){ hu.innerHTML=[['kt','kt'],['ms','m/s']].map(([v,l])=>`<button type="button" data-hu="${v}" aria-pressed="${st.unit===v}">${l}</button>`).join('');
     hu.querySelectorAll('[data-hu]').forEach(b=>b.onclick=()=>setUnit(b.dataset.hu)) }
-  const ht=$('hdrTemp'); if(ht){ ht.innerHTML=[['c','°C'],['f','°F']].map(([v,l])=>`<button type="button" data-ht="${v}" aria-pressed="${(st.tUnit||'c')===v}">${l}</button>`).join('');
+  const ht=$('hdrTemp'); if(ht){ ht.innerHTML=[['f','°F'],['c','°C']].map(([v,l])=>`<button type="button" data-ht="${v}" aria-pressed="${(st.tUnit||'c')===v}">${l}</button>`).join('');
     ht.querySelectorAll('[data-ht]').forEach(b=>b.onclick=()=>setTUnit(b.dataset.ht)) }
 }
 $('minT').oninput=e=>{const v=+e.target.value;st.minT=v<=-10?null:v;minTLabel();update()};
