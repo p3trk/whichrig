@@ -448,6 +448,10 @@ body:not(.on-next) #seasonNote{display:none}
 .grng .auto{font-weight:500}
 .gro{font-size:12px;color:var(--muted);margin-top:6px}.gro.wtxt{color:#B4540A}
 .gdel{margin-top:8px;background:none;border:0;padding:0;color:#B4540A;font:600 13px Barlow,sans-serif;cursor:pointer}
+
+/* dark theme: hours outside your time of day stay readable in the detail rows */
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .mini-row .mini.out{opacity:.5}}
+:root[data-theme="dark"] .mini-row .mini.out{opacity:.5}
 </style>
 </head>
 <body>
@@ -677,7 +681,7 @@ body:not(.on-next) #seasonNote{display:none}
 </div></nav>
 
 <script>
-const APP_VERSION='3.32'; // app-<major>-<minor>; see the lake-wind-days-builds skill
+const APP_VERSION='3.33'; // app-<major>-<minor>; see the lake-wind-days-builds skill
 // ---- data store (Open-Meteo, cached in this browser)
 const DEFAULT_SPOTS={hlucin:{name:'Hlučín',lat:49.89,lon:18.17,tides:false},novemlyny:{name:'Nové Mlýny',lat:48.88,lon:16.68,tides:false},olesna:{name:'Olešná',lat:49.65,lon:18.30,tides:false}};
 // One catalogue for history (Historical Forecast API) and forecast (Forecast API).
@@ -998,7 +1002,9 @@ function renderDays(){
   const multi=st.spots.size>1;
   const L=st.layers, win=i=>HOURS[i]>=st.hFrom&&HOURS[i]<=st.hTo;
   const vis=HOURS.map((h,i)=>st.allDay||win(i)), nVis=vis.filter(Boolean).length, V=a=>a.filter((_,i)=>vis[i]);
-  const tcol=v=>v==null?'transparent':v>=25?'#F6B48F':v>=18?'#FAD7A8':v>=10?'#F3EBC8':v>=0?'#D6E8F3':'#B7D2EE';
+  // temperature colours with matching text: light pastels in the light theme, deeper tones with light text in the dark theme
+  const TC=isDark()?[[25,'#8A4A2A','#FFE9DD'],[18,'#7A5A2C','#FFF1DA'],[10,'#5E5838','#F6F0D8'],[0,'#2F4F66','#E3F0FA'],[-1e9,'#2A4470','#E3ECFA']]:[[25,'#F6B48F','#14232E'],[18,'#FAD7A8','#14232E'],[10,'#F3EBC8','#14232E'],[0,'#D6E8F3','#14232E'],[-1e9,'#B7D2EE','#14232E']];
+  const tpick=v=>TC.find(t=>v>=t[0]), tcol=v=>v==null?'transparent':tpick(v)[1], tfg=v=>v==null?'inherit':tpick(v)[2];
   const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   const cols=`style="grid-template-columns:var(--lc) repeat(${nVis},minmax(0,1fr))"`;
   const num=x=>{const t=fmtW(x); const m=String(t).match(/^(-?\d+)([.,]\d+)$/); return m?`${m[1]}<small class="dec">${m[2]}</small>`:t};
@@ -1029,7 +1035,7 @@ function renderDays(){
           return comb?`<button type="button" class="mrow${off?' off':''}" data-dm="${spot}|${date}|${m}" aria-pressed="${!off}" title="${shortName(m)}: tap to ${off?'use it':'leave it out'} for this day only">${row(cells,'mini-row'+(off?' moff':''),lab)}</button>`:row(cells,'mini-row'+(off?' moff':''),lab)}).join('')+
           (edited?`<div class="mnote">Blend changed for this day · <button type="button" class="mreset" data-dmr="${spot}|${date}">reset</button></div>`:'')})():'')+
         (L.has('gust')?sub('gust',HOURS.map((h,i)=>`<div class="mini ${win(i)?'':'out'}" style="background:${color(gu&&gu[i])};color:${colorFg(gu&&gu[i])}">${gu&&gu[i]!=null?num(gu[i]):'–'}</div>`)):'')+
-        (L.has('temp')?sub(TL(),HOURS.map((h,i)=>`<div class="mini ${win(i)?'':'out'}" style="background:${tcol(tp[i])}">${tp[i]==null?'–':toT(tp[i])}</div>`)):'')+
+        (L.has('temp')?sub(TL(),HOURS.map((h,i)=>`<div class="mini ${win(i)?'':'out'}" style="background:${tcol(tp[i])};color:${tfg(tp[i])}">${tp[i]==null?'–':toT(tp[i])}</div>`)):'')+
         (L.has('cloud')?sub('cloud',HOURS.map((h,i)=>{const c=d[7]&&d[7][i]; return `<div class="mini txt cloudbar ${win(i)?'':'out'}" title="${c!=null?c+'% cloud cover':'no cloud data'}"><i style="height:${c??0}%"></i><span>${c??'–'}</span></div>`})):'')+
         (L.has('tide')&&d[8]?sub('tide',HOURS.map((h,i)=>{const t=d[8][i]; return `<div class="mini txt ${win(i)?'':'out'}" title="Sea level vs mean sea level (not for navigation)">${t==null?'–':(t>0?'+':'')+t.toFixed(2)}</div>`})):'');
       return `<div class="sspot${r.match?'':' miss'}${focusDay&&spot===st.focusSpot?' focus':''}" id="row-${spot}-${date}">`+
