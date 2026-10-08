@@ -227,7 +227,9 @@ body:not(.on-next) #seasonNote{display:none}
 .ver{font:600 11px Barlow,sans-serif;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:2px 7px;align-self:center}
 .hdrR{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
 .segs{display:flex;gap:6px;flex-wrap:nowrap;justify-content:flex-end}
-@media (max-width:480px){.segs{gap:4px}.segs .seg button{min-width:32px;min-height:28px;padding:0 6px;font-size:12px}.hdrR{min-width:146px}}
+.segs .seg{padding:1px}
+.segs .seg button{min-width:26px;min-height:20px;padding:0 5px;font-size:11px;line-height:1}
+.segs{gap:4px}
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:2px;background:var(--panel)}
 .seg button{min-height:32px;min-width:48px;padding:0 12px;border:none;border-radius:999px;background:transparent;color:var(--muted);font:600 13px Barlow,sans-serif;cursor:pointer}
 .seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
@@ -988,7 +990,7 @@ function renderDays(){
           const lab=`<span class="mc" style="--mc:${modelColor(m)}">${short}</span>`;
           const cells=HOURS.map((h,i)=>`<div class="mini ${win(i)?'':'out'}" style="background:${color(mv&&mv[i])};color:${colorFg(mv&&mv[i])}">${mv&&mv[i]!=null?num(mv[i]):'–'}</div>`);
           return comb?`<button type="button" class="mrow${off?' off':''}" data-dm="${spot}|${date}|${m}" aria-pressed="${!off}" title="${shortName(m)}: tap to ${off?'use it':'leave it out'} for this day only">${row(cells,'mini-row'+(off?' moff':''),lab)}</button>`:row(cells,'mini-row'+(off?' moff':''),lab)}).join('')+
-          (edited?`<div class="mnote">Blend changed for this day · <button type="button" class="mreset" data-dmr="${spot}|${date}">reset</button></div>`:comb?`<div class="mnote">Tap a model to leave it out of this day's blend</div>`:'')})():'')+
+          (edited?`<div class="mnote">Blend changed for this day · <button type="button" class="mreset" data-dmr="${spot}|${date}">reset</button></div>`:'')})():'')+
         (L.has('gust')?sub('gust',HOURS.map((h,i)=>`<div class="mini ${win(i)?'':'out'}" style="background:${color(gu&&gu[i])};color:${colorFg(gu&&gu[i])}">${gu&&gu[i]!=null?num(gu[i]):'–'}</div>`)):'')+
         (L.has('temp')?sub(TL(),HOURS.map((h,i)=>`<div class="mini ${win(i)?'':'out'}" style="background:${tcol(tp[i])}">${tp[i]==null?'–':toT(tp[i])}</div>`)):'')+
         (L.has('cloud')?sub('cloud',HOURS.map((h,i)=>{const c=d[7]&&d[7][i]; return `<div class="mini txt cloudbar ${win(i)?'':'out'}" title="${c!=null?c+'% cloud cover':'no cloud data'}"><i style="height:${c??0}%"></i><span>${c??'–'}</span></div>`})):'')+
