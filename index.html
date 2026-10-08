@@ -226,6 +226,8 @@ body:not(.on-next) #seasonNote{display:none}
 .apphead .when{font-size:12px;color:var(--muted);text-align:right}
 .ver{font:600 11px Barlow,sans-serif;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:2px 7px;align-self:center}
 .hdrR{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.segs{display:flex;gap:6px;flex-wrap:nowrap;justify-content:flex-end}
+@media (max-width:480px){.segs{gap:4px}.segs .seg button{min-width:32px;min-height:28px;padding:0 6px;font-size:12px}.hdrR{min-width:146px}}
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:2px;background:var(--panel)}
 .seg button{min-height:32px;min-width:48px;padding:0 12px;border:none;border-radius:999px;background:transparent;color:var(--muted);font:600 13px Barlow,sans-serif;cursor:pointer}
 .seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
@@ -410,7 +412,7 @@ body:not(.on-next) #seasonNote{display:none}
   <header class="apphead">
     <div class="hdrL"><div class="brand"><svg width="30" height="30" viewBox="0 0 40 40" aria-hidden="true"><path d="M8 32 L20 6 L32 32 Z" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"></path><path d="M20 6 L20 32" stroke="#C4460F" stroke-width="2.5"></path><path d="M4 36 H36" stroke="#1F7478" stroke-width="2.5" stroke-linecap="round"></path></svg><h1 style="font:inherit;margin:0">Which Rig</h1><span class="ver" id="appVer"></span></div>
     <p class="snote" id="seasonNote" hidden></p></div>
-    <div class="hdrR"><div class="when" id="when"></div><div class="seg" id="hdrUnit" role="group" aria-label="Wind units"></div></div>
+    <div class="hdrR"><div class="when" id="when"></div><div class="segs"><div class="seg" id="hdrTemp" role="group" aria-label="Temperature units"></div><div class="seg" id="hdrUnit" role="group" aria-label="Wind units"></div></div></div>
   </header>
   <p class="sub" id="sub" hidden></p>
 
@@ -637,7 +639,7 @@ body:not(.on-next) #seasonNote{display:none}
 </div></nav>
 
 <script>
-const APP_VERSION='3.29'; // app-<major>-<minor>; see the lake-wind-days-builds skill
+const APP_VERSION='3.30'; // app-<major>-<minor>; see the lake-wind-days-builds skill
 // ---- data store (Open-Meteo, cached in this browser)
 const DEFAULT_SPOTS={hlucin:{name:'Hlučín',lat:49.89,lon:18.17,tides:false},novemlyny:{name:'Nové Mlýny',lat:48.88,lon:16.68,tides:false},olesna:{name:'Olešná',lat:49.65,lon:18.30,tides:false}};
 // One catalogue for history (Historical Forecast API) and forecast (Forecast API).
@@ -778,7 +780,7 @@ const GEAR_DEFAULTS_VERSION=2;
 // rider + quiver are saved in this browser
 const GEAR_KEY='lakewind-gear-v1';
 function saveGear(){
-  try{ localStorage.setItem(GEAR_KEY,JSON.stringify({defaultsVersion:GEAR_DEFAULTS_VERSION,unit:st.unit,weight:st.weight,skill:st.skill,suit:st.suit,lowMode:st.lowMode,
+  try{ localStorage.setItem(GEAR_KEY,JSON.stringify({defaultsVersion:GEAR_DEFAULTS_VERSION,unit:st.unit,tUnit:st.tUnit||'c',weight:st.weight,skill:st.skill,suit:st.suit,lowMode:st.lowMode,
     gear:st.gear.map(({id,...g})=>g)})) }catch(e){}
 }
 function loadGear(){
@@ -787,6 +789,7 @@ function loadGear(){
       // gear added to the defaults later: append it (switched off) if it isn't in the saved list yet
       if((s.defaultsVersion||1)<GEAR_DEFAULTS_VERSION) for(const d of defaultGear()) if(!st.gear.some(g=>g.type===d.type&&g.size===d.size)) st.gear.push(d) }
     if(s.unit==='kt'||s.unit==='ms') st.unit=s.unit;
+    if(s.tUnit==='c'||s.tUnit==='f') st.tUnit=s.tUnit;
     if(s.weight>=40&&s.weight<=140) st.weight=s.weight;
     if(SKILL[s.skill]) st.skill=s.skill;
     if(s.suit!=null) st.suit=+s.suit;
@@ -979,7 +982,7 @@ function renderDays(){
       const ws=r.works.slice().sort((a,b)=>prefCmp(a.g,b.g));
       const pills=ws.length?ws.slice(0,3).map(w=>`<span class="pill" style="background:${gearColor(w.g)};color:${textOn(gearColor(w.g))}" title="${gearLabel(w.g)}: ${w.hours} h in range">${gearShort(w.g)}</span>`).join('')+(ws.length>3?`<span class="pill plus" title="Also works: ${ws.slice(3).map(w=>gearLabel(w.g)+' ('+w.hours+' h)').join(', ')}">+${ws.length-3}</span>`:''):'';
       const head=`<span class="ssn">${multi?esc(SPOTS[spot].name):''}</span><span class="vpill ${v}">${lbl[v]}</span><span class="pills">${pills}</span>${hasL?`<span class="car" aria-hidden="true">${open?'▾':'▸'}</span>`:''}`;
-      const cells=sp.map((x,i)=>`<div class="cell ${r.inWin[i]?'':'out'} ${r.hit.has(i)?'hit':''}" style="background:${color(x)};color:${colorFg(x)}" title="${String(HOURS[i]).padStart(2,'0')}h: ${fmtW(x)} ${UL()}${dr[i]!=null?' from '+sector(dr[i])+' ('+dr[i]+'°)':''}${gu&&gu[i]!=null?', gusts '+fmtW(gu[i])+' '+UL():''}${tp[i]!=null?', '+tp[i]+' °C':''}">${x==null?'–':`<span class="nv">${num(x)}</span>`}${dr[i]!=null&&x!=null?arrow(dr[i]):''}</div>`);
+      const cells=sp.map((x,i)=>`<div class="cell ${r.inWin[i]?'':'out'} ${r.hit.has(i)?'hit':''}" style="background:${color(x)};color:${colorFg(x)}" title="${String(HOURS[i]).padStart(2,'0')}h: ${fmtW(x)} ${UL()}${dr[i]!=null?' from '+sector(dr[i])+' ('+dr[i]+'°)':''}${gu&&gu[i]!=null?', gusts '+fmtW(gu[i])+' '+UL():''}${tp[i]!=null?', '+toT(tp[i])+' '+TL():''}">${x==null?'–':`<span class="nv">${num(x)}</span>`}${dr[i]!=null&&x!=null?arrow(dr[i]):''}</div>`);
       const det=!open?'':(L.has('models')&&d[9]?(()=>{const comb=META.view==='combined', act=comb?dayAct(spot,date):[META.view], edited=comb&&st.dayModels&&st.dayModels.has(spot+'|'+date);
           return META.blend.map(m=>{const mv=d[9][m], off=!act.includes(m), short=shortName(m).split(' ')[0].slice(0,4);
           const lab=`<span class="mc" style="--mc:${modelColor(m)}">${short}</span>`;
@@ -987,7 +990,7 @@ function renderDays(){
           return comb?`<button type="button" class="mrow${off?' off':''}" data-dm="${spot}|${date}|${m}" aria-pressed="${!off}" title="${shortName(m)}: tap to ${off?'use it':'leave it out'} for this day only">${row(cells,'mini-row'+(off?' moff':''),lab)}</button>`:row(cells,'mini-row'+(off?' moff':''),lab)}).join('')+
           (edited?`<div class="mnote">Blend changed for this day · <button type="button" class="mreset" data-dmr="${spot}|${date}">reset</button></div>`:comb?`<div class="mnote">Tap a model to leave it out of this day's blend</div>`:'')})():'')+
         (L.has('gust')?sub('gust',HOURS.map((h,i)=>`<div class="mini ${win(i)?'':'out'}" style="background:${color(gu&&gu[i])};color:${colorFg(gu&&gu[i])}">${gu&&gu[i]!=null?num(gu[i]):'–'}</div>`)):'')+
-        (L.has('temp')?sub('°C',HOURS.map((h,i)=>`<div class="mini ${win(i)?'':'out'}" style="background:${tcol(tp[i])}">${tp[i]??'–'}</div>`)):'')+
+        (L.has('temp')?sub(TL(),HOURS.map((h,i)=>`<div class="mini ${win(i)?'':'out'}" style="background:${tcol(tp[i])}">${tp[i]==null?'–':toT(tp[i])}</div>`)):'')+
         (L.has('cloud')?sub('cloud',HOURS.map((h,i)=>{const c=d[7]&&d[7][i]; return `<div class="mini txt cloudbar ${win(i)?'':'out'}" title="${c!=null?c+'% cloud cover':'no cloud data'}"><i style="height:${c??0}%"></i><span>${c??'–'}</span></div>`})):'')+
         (L.has('tide')&&d[8]?sub('tide',HOURS.map((h,i)=>{const t=d[8][i]; return `<div class="mini txt ${win(i)?'':'out'}" title="Sea level vs mean sea level (not for navigation)">${t==null?'–':(t>0?'+':'')+t.toFixed(2)}</div>`})):'');
       return `<div class="sspot${r.match?'':' miss'}${focusDay&&spot===st.focusSpot?' focus':''}" id="row-${spot}-${date}">`+
@@ -1135,7 +1138,7 @@ function panelSums(){
   const on=st.gear.filter(g=>g.on);
   S('gear',`${st.weight} kg · ${on.length} of ${st.gear.length} gear on${on.length?': '+on.map(gearShort).join(', '):''}`);
   const dirsSet=Object.keys(SPOTS).filter(k=>st.spots.has(k)&&st.dirs[k]&&st.dirs[k].size<8).length;
-  S('cond',`${st.dur*2} h+ · ${String(st.hFrom).padStart(2,'0')}–${String(st.hTo).padStart(2,'0')}h · ${st.minT==null?'any temp':'≥ '+st.minT+' °C'}${dirsSet?` · direction limited at ${dirsSet} spot${dirsSet>1?'s':''}`:''} · ${UL()}`);
+  S('cond',`${st.dur*2} h+ · ${String(st.hFrom).padStart(2,'0')}–${String(st.hTo).padStart(2,'0')}h · ${st.minT==null?'any temp':'≥ '+toT(st.minT)+' '+TL()}${dirsSet?` · direction limited at ${dirsSet} spot${dirsSet>1?'s':''}`:''} · ${UL()}`);
   S('sum',`${results.filter(x=>x.r.match).length} rideable spot-days`);
 }
 function initFolds(){
@@ -1608,13 +1611,19 @@ $('tbl').addEventListener('click',e=>{
 $('expAll').onclick=()=>{st.expandAll=true;renderDays()};
 $('colAll').onclick=()=>{st.expandAll=false;st.expanded.clear();renderDays()};
 function layerChips(){chips($('layers'),[['models','Each model'],['gust','Gusts'],['temp','Temperature'],['cloud','Clouds'],['tide','Tides']],v=>st.layers.has(v),v=>{st.layers.has(v)?st.layers.delete(v):st.layers.add(v);layerChips();renderDays()})}
+const toT=c=>c==null?null:st.tUnit==='f'?Math.round(c*9/5+32):c;
+const TL=()=>st.tUnit==='f'?'°F':'°C';
+function setTUnit(u){ if(u!=='c'&&u!=='f') return; st.tUnit=u; saveGear(); unitChips(); minTLabel(); renderDays(); panelSums() }
+function minTLabel(){ $('minTOut').value=st.minT==null?'Any':toT(st.minT); $('minTUnit').textContent=st.minT==null?'':TL() }
 function setUnit(u){ if(u!=='kt'&&u!=='ms') return; st.unit=u; unitChips(); renderGear(); renderDays(); renderCoverage(); renderNext(); renderSummary(); panelSums() }
 function unitChips(){
   chips($('units'),[['kt','kt'],['ms','m/s']],u=>st.unit===u,setUnit);
   const hu=$('hdrUnit'); if(hu){ hu.innerHTML=[['kt','kt'],['ms','m/s']].map(([v,l])=>`<button type="button" data-hu="${v}" aria-pressed="${st.unit===v}">${l}</button>`).join('');
     hu.querySelectorAll('[data-hu]').forEach(b=>b.onclick=()=>setUnit(b.dataset.hu)) }
+  const ht=$('hdrTemp'); if(ht){ ht.innerHTML=[['c','°C'],['f','°F']].map(([v,l])=>`<button type="button" data-ht="${v}" aria-pressed="${(st.tUnit||'c')===v}">${l}</button>`).join('');
+    ht.querySelectorAll('[data-ht]').forEach(b=>b.onclick=()=>setTUnit(b.dataset.ht)) }
 }
-$('minT').oninput=e=>{const v=+e.target.value;st.minT=v<=-10?null:v;$('minTOut').value=st.minT==null?'Any':st.minT;$('minTUnit').textContent=st.minT==null?'':'°C';update()};
+$('minT').oninput=e=>{const v=+e.target.value;st.minT=v<=-10?null:v;minTLabel();update()};
 $('showAll').onchange=e=>{st.showAll=e.target.checked;st.limit=150;renderDays()};
 $('wReset').onclick=()=>{META.w={}; saveStore(); renderBlend(); rebuildAll(); afterDataChange()};
 try{ st.allDay=localStorage.getItem('lakewind-allday')==='1' }catch(e){} $('allDay').checked=st.allDay;
@@ -1622,6 +1631,7 @@ $('allDay').onchange=e=>{st.allDay=e.target.checked; try{localStorage.setItem('l
 $('more').onclick=()=>{st.limit+=300;renderDays()};
 initFolds(); { let tb='next'; try{tb=localStorage.getItem(TAB_KEY)||'next'}catch(e){} showTab(['next','season','quiver','spots'].includes(tb)?tb:'next') }
 loadGear(); $('weight').value=st.weight; $('wOut').value=st.weight; $('skill').value=st.skill; $('suit').value=String(st.suit); $('lowMode').value=st.lowMode;
+try{ minTLabel() }catch(e){}
 unitChips(); layerChips(); renderPrio(); renderGear(); renderBlend(); afterDataChange();
 (async()=>{ await loadBulk(); rebuildAll(); afterDataChange();
 if(!Object.values(SPOTS).some(s=>Object.keys(s.m).length)){ $('p-data').open=true; showTab('spots'); } if(!Object.values(SPOTS).some(s=>Object.keys(s.m).length)) setStatus('No data yet. Press "Download all spots" to fetch GFS, ICON, IFS and UKMO Global history and forecasts from Open-Meteo.');
