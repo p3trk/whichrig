@@ -461,6 +461,8 @@ body:not(.on-next) #seasonNote{display:none}
 .gdrag:focus-visible{outline:2px solid var(--sock)}
 .gc.dragging{position:relative;z-index:5;background:var(--panel);box-shadow:0 6px 18px rgba(0,0,0,.18);border-radius:10px;opacity:.97}
 .prioItem:focus-visible{outline:2px solid var(--sock);outline-offset:2px}
+.prioBox{margin:4px 0 16px;padding-bottom:14px;border-bottom:1px solid var(--line)}
+.prioBox .lbl{margin-bottom:8px}
 </style>
 </head>
 <body>
@@ -511,6 +513,7 @@ body:not(.on-next) #seasonNote{display:none}
   <section class="tab" id="tab-quiver" aria-label="Gear" hidden>
     <details class="panel fold" id="p-gear" data-sec="gear">
     <summary><h2 id="h-gear">Rider and gear</h2><span class="psum" id="s-gear"></span></summary>
+    <div class="prioBox"><span class="lbl">Gear preference <span class="status" style="font-weight:400">(drag to reorder · first is tried first, then the smallest rig that works)</span></span><div class="row" id="prio" role="group" aria-label="Gear type preference order, first is preferred"></div></div>
     <div class="riderRow">
       <div>
         <label class="lbl" for="weight">Rider weight</label>
@@ -554,7 +557,6 @@ body:not(.on-next) #seasonNote{display:none}
     </div>
     <div class="cov">
       <div class="covHead"><span class="lbl" style="margin:0">Wind coverage</span><span class="status" id="covStat"></span><span class="typeCounts" id="typeCounts"></span></div>
-      <div class="row" style="margin:2px 0 8px;gap:8px"><span class="lbl" style="margin:0">Gear preference</span><div class="row" id="prio" role="group" aria-label="Gear type preference order, first is preferred"></div><span class="status">then smallest rig that works</span></div>
       <div id="covChart"></div>
       <span class="hint">Each calendar day counts once, even when several spots are selected, and is placed at the best spot's sustained wind (the strongest wind that held for the chosen duration within your hours, temperature and direction filters). Every rideable day is given to one gear by the gear preference above (first type that works, then the smallest rig of that type). Coloured parts of each bar and the percentages on the right show that gear usage; grey is days your gear doesn't cover. Hover a bar for counts.</span>
     </div>
