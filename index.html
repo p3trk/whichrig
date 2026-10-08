@@ -138,7 +138,7 @@ tr.miss td{opacity:.35}
 .how summary{cursor:pointer;color:var(--ink);font-weight:600}
 .how p{margin:6px 0}
 .cov{border-top:1px solid var(--line);margin-top:18px;padding-top:14px}
-.prioItem{display:inline-flex;align-items:center;gap:2px;border:1px solid var(--line);border-radius:999px;padding:2px 4px 2px 6px;font-size:13px;font-weight:600;background:var(--panel);cursor:grab;touch-action:none;user-select:none}
+.prioItem{display:inline-flex;align-items:center;gap:2px;border:1px solid var(--line);border-radius:999px;padding:4px 10px 4px 6px;font-size:13px;font-weight:600;background:var(--panel);cursor:grab;touch-action:none;user-select:none}
 .prioItem .pgrip{color:var(--muted);font-size:11px;letter-spacing:-2px;margin-right:4px}
 .prioItem.dragging{position:relative;z-index:5;cursor:grabbing;box-shadow:0 6px 16px rgba(0,0,0,.2)}
 .x.mv{font-size:11px;padding:2px 4px}
@@ -460,6 +460,7 @@ body:not(.on-next) #seasonNote{display:none}
 .gdrag:active{cursor:grabbing}
 .gdrag:focus-visible{outline:2px solid var(--sock)}
 .gc.dragging{position:relative;z-index:5;background:var(--panel);box-shadow:0 6px 18px rgba(0,0,0,.18);border-radius:10px;opacity:.97}
+.prioItem:focus-visible{outline:2px solid var(--sock);outline-offset:2px}
 </style>
 </head>
 <body>
@@ -1171,9 +1172,7 @@ function dirChips(){
 // preferred gear for a day: types in the chosen order (default fin > wingfoil > windfoil), within a type the smallest rig that works
 const prefCmp=(a,b)=>st.prio.indexOf(a.type)-st.prio.indexOf(b.type)||a.size-b.size||a.id-b.id;
 function renderPrio(){
-  $('prio').innerHTML=st.prio.map((k,i)=>`${i?'<span class="status psep" aria-hidden="true">›</span>':''}<span class="prioItem" data-pk="${k}" title="Drag to change the order"><span class="pgrip" aria-hidden="true">⋮⋮</span><span class="swatch" style="background:${TYPE_MID[k]}"></span>${TYPES[k].name}
-    <button class="x mv" data-i="${i}" data-d="-1" ${i===0?'disabled':''} aria-label="Move ${TYPES[k].name} earlier">◀</button><button class="x mv" data-i="${i}" data-d="1" ${i===st.prio.length-1?'disabled':''} aria-label="Move ${TYPES[k].name} later">▶</button></span>`).join('');
-  $('prio').querySelectorAll('button').forEach(b=>b.onclick=()=>{const i=+b.dataset.i,j=i+ +b.dataset.d; [st.prio[i],st.prio[j]]=[st.prio[j],st.prio[i]]; saveGear(); renderPrio(); update()});
+  $('prio').innerHTML=st.prio.map((k,i)=>`${i?'<span class="status psep" aria-hidden="true">›</span>':''}<span class="prioItem" data-pk="${k}" tabindex="0" role="button" title="Drag to change the order" aria-label="${TYPES[k].name}, preference ${i+1} of ${st.prio.length}. Drag, or use the left and right arrow keys, to move it"><span class="pgrip" aria-hidden="true">⋮⋮</span><span class="swatch" style="background:${TYPE_MID[k]}"></span>${TYPES[k].name}</span>`).join('');
 }
 // drag the preference chips (mouse or touch) to change the order
 (()=>{
@@ -1201,6 +1200,11 @@ function renderPrio(){
     renderPrio();
   };
   box.addEventListener('pointerup',end); box.addEventListener('pointercancel',end);
+  box.addEventListener('keydown',e=>{
+    const it=e.target.closest('.prioItem'); if(!it||(e.key!=='ArrowLeft'&&e.key!=='ArrowRight')) return; e.preventDefault();
+    const k=it.dataset.pk, i=st.prio.indexOf(k), j=e.key==='ArrowLeft'?i-1:i+1; if(j<0||j>=st.prio.length) return;
+    [st.prio[i],st.prio[j]]=[st.prio[j],st.prio[i]]; saveGear(); renderPrio(); update(); const n=box.querySelector(`[data-pk="${k}"]`); n&&n.focus();
+  });
 })();
 
 function renderCoverage(){
