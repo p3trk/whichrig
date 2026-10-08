@@ -718,7 +718,7 @@ body:not(.on-next) #seasonNote{display:none}
 </div></nav>
 
 <script>
-const APP_VERSION='3.37'; // app-<major>-<minor>; see the lake-wind-days-builds skill
+const APP_VERSION='3.38'; // app-<major>-<minor>; see the lake-wind-days-builds skill
 // ---- data store (Open-Meteo, cached in this browser)
 const DEFAULT_SPOTS={hlucin:{name:'Hlučín',lat:49.89,lon:18.17,tides:false},novemlyny:{name:'Nové Mlýny',lat:48.88,lon:16.68,tides:false},olesna:{name:'Olešná',lat:49.65,lon:18.30,tides:false}};
 // One catalogue for history (Historical Forecast API) and forecast (Forecast API).
@@ -794,7 +794,7 @@ function viewLabel(){
   if(META.view!=='combined') return `Model · ${shortName(META.view)}`;
   const a=activeModels(); return a.length?`Combined · ${blendText()}`:'Combined · no model switched on';
 }
-const VARS='wind_speed_10m,wind_direction_10m,wind_gusts_10m,temperature_2m,cloud_cover';
+const VARS='wind_speed_10m,wind_direction_10m,wind_gusts_10m,temperature_2m,cloud_cover,precipitation';
 const MARINE_URL='https://marine-api.open-meteo.com/v1/marine', TIDE_MIN='2022-01-01';
 const LS_KEY='lakewind-blend-v3';
 const autoStart=()=>(new Date().getFullYear()-1)+'-01-01'; // 1 January of the previous year
@@ -885,7 +885,7 @@ const st={
   prio:['fin','wingfoil','windfoil'],
   weight:100,skill:'intermediate',suit:0,lowMode:'takeoff',
   gear:defaultGear(),
-  layers:new Set(['models','gust','temp','cloud','tide']),expanded:new Set(),expandAll:false,dur:2,hFrom:8,hTo:18,unit:'kt',minT:18,dirs:Object.fromEntries(Object.keys(SPOTS).map(k=>[k,new Set(SECT)])),showAll:false,allDay:false,limit:150
+  layers:new Set(['models','gust','temp','rain','cloud','tide']),expanded:new Set(),expandAll:false,dur:2,hFrom:8,hTo:18,unit:'kt',minT:18,dirs:Object.fromEntries(Object.keys(SPOTS).map(k=>[k,new Set(SECT)])),showAll:false,allDay:false,limit:150
 };
 let allYears=[];
 function refreshYears(){
@@ -1042,6 +1042,8 @@ function renderDays(){
   const vis=HOURS.map((h,i)=>st.allDay||win(i)), nVis=vis.filter(Boolean).length, V=a=>a.filter((_,i)=>vis[i]);
   // temperature colours with matching text: light pastels in the light theme, deeper tones with light text in the dark theme
   const TC=isDark()?[[25,'#8A4A2A','#FFE9DD'],[18,'#7A5A2C','#FFF1DA'],[10,'#5E5838','#F6F0D8'],[0,'#2F4F66','#E3F0FA'],[-1e9,'#2A4470','#E3ECFA']]:[[25,'#F6B48F','#14232E'],[18,'#FAD7A8','#14232E'],[10,'#F3EBC8','#14232E'],[0,'#D6E8F3','#14232E'],[-1e9,'#B7D2EE','#14232E']];
+  const RC=isDark()?[[5,'#1F5FA8','#EAF2FC'],[2,'#2A4F7A','#EAF2FC'],[0.5,'#25405E','#DCE8F5'],[0.05,'#1F3348','#C9D9EA']]:[[5,'#2F78BD','#FFFFFF'],[2,'#6BA7DA','#0B1C22'],[0.5,'#A9CDEB','#14232E'],[0.05,'#DCEBF7','#14232E']];
+  const rpick=v=>RC.find(t=>v>=t[0]), rcol=v=>v==null||v<0.05?'transparent':rpick(v)[1], rfg=v=>v==null||v<0.05?'inherit':rpick(v)[2];
   const tpick=v=>TC.find(t=>v>=t[0]), tcol=v=>v==null?'transparent':tpick(v)[1], tfg=v=>v==null?'inherit':tpick(v)[2];
   const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   const cols=`style="grid-template-columns:var(--lc) repeat(${nVis},minmax(0,1fr))"`;
@@ -1065,7 +1067,7 @@ function renderDays(){
       const ws=r.works.slice().sort((a,b)=>prefCmp(a.g,b.g));
       const pills=ws.length?ws.slice(0,3).map(w=>`<span class="pill" style="background:${gearColor(w.g)};color:${textOn(gearColor(w.g))}" title="${gearLabel(w.g)}: ${w.hours} h in range">${gearShort(w.g)}</span>`).join('')+(ws.length>3?`<span class="pill plus" title="Also works: ${ws.slice(3).map(w=>gearLabel(w.g)+' ('+w.hours+' h)').join(', ')}">+${ws.length-3}</span>`:''):'';
       const head=`<span class="ssn">${multi?esc(SPOTS[spot].name):''}</span><span class="vpill ${v}">${lbl[v]}</span><span class="pills">${pills}</span>${hasL?`<span class="car" aria-hidden="true">${open?'▾':'▸'}</span>`:''}`;
-      const cells=sp.map((x,i)=>`<div class="cell ${r.inWin[i]?'':'out'} ${r.hit.has(i)?'hit':''}" style="background:${color(x)};color:${colorFg(x)}" title="${String(HOURS[i]).padStart(2,'0')}h: ${fmtW(x)} ${UL()}${dr[i]!=null?' from '+sector(dr[i])+' ('+dr[i]+'°)':''}${gu&&gu[i]!=null?', gusts '+fmtW(gu[i])+' '+UL():''}${tp[i]!=null?', '+toT(tp[i])+' '+TL():''}">${x==null?'–':`<span class="nv">${num(x)}</span>`}${dr[i]!=null&&x!=null?arrow(dr[i]):''}</div>`);
+      const cells=sp.map((x,i)=>`<div class="cell ${r.inWin[i]?'':'out'} ${r.hit.has(i)?'hit':''}" style="background:${color(x)};color:${colorFg(x)}" title="${String(HOURS[i]).padStart(2,'0')}h: ${fmtW(x)} ${UL()}${dr[i]!=null?' from '+sector(dr[i])+' ('+dr[i]+'°)':''}${gu&&gu[i]!=null?', gusts '+fmtW(gu[i])+' '+UL():''}${tp[i]!=null?', '+toT(tp[i])+' '+TL():''}${d[11]&&d[11][i]?', rain '+d[11][i]+' mm':''}">${x==null?'–':`<span class="nv">${num(x)}</span>`}${dr[i]!=null&&x!=null?arrow(dr[i]):''}</div>`);
       const det=!open?'':(L.has('models')&&d[9]?(()=>{const comb=META.view==='combined', act=comb?dayAct(spot,date):[META.view], edited=comb&&st.dayModels&&st.dayModels.has(spot+'|'+date);
           return META.blend.map(m=>{const mv=d[9][m], off=!act.includes(m), short=shortName(m).split(' ')[0].slice(0,4);
           const lab=`<span class="mc" style="--mc:${modelColor(m)}">${short}</span>`;
@@ -1074,6 +1076,7 @@ function renderDays(){
           (edited?`<div class="mnote">Blend changed for this day · <button type="button" class="mreset" data-dmr="${spot}|${date}">reset</button></div>`:'')})():'')+
         (L.has('gust')?sub('gust',HOURS.map((h,i)=>`<div class="mini ${win(i)?'':'out'}" style="background:${color(gu&&gu[i])};color:${colorFg(gu&&gu[i])}">${gu&&gu[i]!=null?num(gu[i]):'–'}</div>`)):'')+
         (L.has('temp')?sub(TL(),HOURS.map((h,i)=>`<div class="mini ${win(i)?'':'out'}" style="background:${tcol(tp[i])};color:${tfg(tp[i])}">${tp[i]==null?'–':toT(tp[i])}</div>`)):'')+
+        (L.has('rain')?sub('rain',HOURS.map((h,i)=>{const v=d[11]&&d[11][i]; return `<div class="mini ${win(i)?'':'out'}" style="background:${rcol(v)};color:${rfg(v)}" title="${v==null?'no rain data (download again)':v+' mm in 2 h'}">${v==null?'–':v===0?'':v}</div>`})):'')+
         (L.has('cloud')?sub('cloud',HOURS.map((h,i)=>{const c=d[7]&&d[7][i]; return `<div class="mini txt cloudbar ${win(i)?'':'out'}" title="${c!=null?c+'% cloud cover':'no cloud data'}"><i style="height:${c??0}%"></i><span>${c??'–'}</span></div>`})):'')+
         (L.has('tide')&&d[8]?sub('tide',HOURS.map((h,i)=>{const t=d[8][i]; return `<div class="mini txt ${win(i)?'':'out'}" title="Sea level vs mean sea level (not for navigation)">${t==null?'–':(t>0?'+':'')+t.toFixed(2)}</div>`})):'');
       return `<div class="sspot${r.match?'':' miss'}${focusDay&&spot===st.focusSpot?' focus':''}" id="row-${spot}-${date}">`+
@@ -1548,15 +1551,15 @@ async function getJSON(url){
   return j;
 }
 const r1=v=>v==null?null:Math.round(v*10)/10;
-// hourly Open-Meteo arrays -> app days: [date, speed[12], dir[12], temp[12], gust[12], forecast flag, forecast source, cloud %[12], tide m[12]]
+// hourly Open-Meteo arrays -> app days: [date, speed[12], dir[12], temp[12], gust[12], forecast flag, forecast source, cloud %[12], tide m[12], rain mm per 2 h[12]]
 function hourlyToDays(h,forecast){ // forecast: false for history, or the forecast model name
   const by=new Map();
   (h.time||[]).forEach((t,i)=>{const date=t.slice(0,10), hr=+t.slice(11,13);
-    let d=by.get(date); if(!d){d={sp:Array(24).fill(null),dr:Array(24).fill(null),tp:Array(24).fill(null),gu:Array(24).fill(null),cl:Array(24).fill(null)};by.set(date,d)}
-    d.sp[hr]=h.wind_speed_10m?.[i]??null; d.dr[hr]=h.wind_direction_10m?.[i]??null; d.tp[hr]=h.temperature_2m?.[i]??null; d.gu[hr]=h.wind_gusts_10m?.[i]??null; d.cl[hr]=h.cloud_cover?.[i]??null; });
+    let d=by.get(date); if(!d){d={sp:Array(24).fill(null),dr:Array(24).fill(null),tp:Array(24).fill(null),gu:Array(24).fill(null),cl:Array(24).fill(null),pr:Array(24).fill(null)};by.set(date,d)}
+    d.sp[hr]=h.wind_speed_10m?.[i]??null; d.dr[hr]=h.wind_direction_10m?.[i]??null; d.tp[hr]=h.temperature_2m?.[i]??null; d.gu[hr]=h.wind_gusts_10m?.[i]??null; d.cl[hr]=h.cloud_cover?.[i]??null; d.pr[hr]=h.precipitation?.[i]??null; });
   const out=[];
   for(const [date,d] of by){
-    const sp=[],dr=[],tp=[],gu=[],cl=[];
+    const sp=[],dr=[],tp=[],gu=[],cl=[],pr=[];
     for(let s=0;s<12;s++){const a=2*s,b=a+1;
       const vs=[d.sp[a],d.sp[b]].filter(v=>v!=null); sp.push(vs.length?r1(vs.reduce((x,y)=>x+y,0)/vs.length):null);
       let sx=0,sy=0,n=0; [a,b].forEach(k=>{if(d.dr[k]!=null){const w=Math.max(d.sp[k]??1,0.1),ra=d.dr[k]*Math.PI/180; sx+=Math.sin(ra)*w; sy+=Math.cos(ra)*w; n++}});
@@ -1564,8 +1567,9 @@ function hourlyToDays(h,forecast){ // forecast: false for history, or the foreca
       const ts=[d.tp[a],d.tp[b]].filter(v=>v!=null); tp.push(ts.length?Math.round(ts.reduce((x,y)=>x+y,0)/ts.length):null);
       const gs=[d.gu[a],d.gu[b]].filter(v=>v!=null); gu.push(gs.length?r1(Math.max(...gs)):null);
       const cs=[d.cl[a],d.cl[b]].filter(v=>v!=null); cl.push(cs.length?Math.round(cs.reduce((x,y)=>x+y,0)/cs.length):null);
+      const ps=[d.pr[a],d.pr[b]].filter(v=>v!=null); pr.push(ps.length?r1(ps.reduce((x,y)=>x+y,0)):null);
     }
-    if(sp.some(v=>v!=null)) out.push([date,sp,dr,tp,gu,forecast?1:0,forecast||null,cl,null]);
+    if(sp.some(v=>v!=null)) out.push([date,sp,dr,tp,gu,forecast?1:0,forecast||null,cl,null,pr.some(v=>v!=null)?pr:null]);
   }
   return out;
 }
@@ -1608,7 +1612,7 @@ function buildDays(s){
   s.idx={}; for(const m of META.blend){ s.idx[m]=new Map((s.m[m]||[]).map(d=>[d[0],d])) }
   const perModel=date=>{const o={}; for(const m of META.blend){const d=s.idx[m].get(date); if(d) o[m]=d[1]} return o};
   if(META.view!=='combined'){
-    s.days=(s.m[META.view]||[]).map(d=>[d[0],d[1],d[2],d[3],d[4],d[5],d[5]?shortName(META.view):null,d[7],tideOf(d[0]),perModel(d[0])]);
+    s.days=(s.m[META.view]||[]).map(d=>[d[0],d[1],d[2],d[3],d[4],d[5],d[5]?shortName(META.view):null,d[7],tideOf(d[0]),perModel(d[0]),null,d[9]||null]);
     return;
   }
   const act=activeModels(), dates=new Set(); act.forEach(m=>(s.m[m]||[]).forEach(d=>dates.add(d[0])));
@@ -1617,11 +1621,11 @@ function buildDays(s){
     const sk=Object.keys(SPOTS).find(x=>SPOTS[x]===s), dact=sk?dayAct(sk,date):act;
     const dm=dact.map(m=>[m,s.idx[m].get(date)]).filter(x=>x[1]); if(!dm.length) continue; const ds=dm.map(x=>x[1]), ws=dm.map(x=>mWt(x[0]));
     const avg=(k,round)=>Array.from({length:12},(_,i)=>{let sv=0,sw=0; ds.forEach((d,j)=>{const v=d[k]&&d[k][i]; if(v!=null){sv+=v*ws[j]; sw+=ws[j]}}); return sw?round(sv/sw):null});
-    const sp=avg(1,r1), gu=avg(4,r1), tp=avg(3,Math.round), cl=avg(7,Math.round);
+    const sp=avg(1,r1), gu=avg(4,r1), tp=avg(3,Math.round), cl=avg(7,Math.round), rn=avg(9,r1);
     const dr=Array.from({length:12},(_,i)=>{let sx=0,sy=0,n=0; ds.forEach((d,j)=>{const a=d[2]&&d[2][i], w=d[1]&&d[1][i]; if(a!=null){const r=a*Math.PI/180, ww=Math.max(w??1,0.1)*ws[j]; sx+=Math.sin(r)*ww; sy+=Math.cos(r)*ww; n++}}); return n?Math.round((Math.atan2(sx,sy)*180/Math.PI+360)%360):null});
     if(!sp.some(v=>v!=null)) continue;
     const fc=ds.some(d=>d[5])?1:0;
-    out.push([date,sp,dr,tp,gu,fc,fc?'Combined':null,cl,tideOf(date),perModel(date),ds.length]);
+    out.push([date,sp,dr,tp,gu,fc,fc?'Combined':null,cl,tideOf(date),perModel(date),ds.length,rn.some(v=>v!=null)?rn:null]);
   }
   s.days=out;
 }
