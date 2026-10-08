@@ -615,6 +615,32 @@ body:not(.on-next) #seasonNote{display:none}
   </section>
 
   <section class="tab" id="tab-spots" aria-label="Spots" hidden>
+    <details class="panel fold" id="p-where" data-sec="where">
+    <summary><h2 id="h-where">Spots and period</h2><span class="psum" id="s-where"></span></summary>
+    <div class="cols">
+      <div>
+        <span class="lbl" id="spotLbl">Spots</span>
+        <div class="row" id="spots" role="group" aria-labelledby="spotLbl"></div>
+      </div>
+      <div>
+        <span class="lbl">Months</span>
+        <div class="row" style="flex-wrap:nowrap">
+          <select id="mFrom" aria-label="From month"></select>
+          <span class="status">to</span>
+          <select id="mTo" aria-label="To month"></select>
+        </div>
+        <span class="hint">Applies to every year. A range like Oct–Mar wraps over New Year.</span>
+      </div>
+      <div>
+        <span class="lbl" id="yearLbl">Years</span>
+        <div class="row" id="years" role="group" aria-labelledby="yearLbl"></div>
+      </div>
+    </div>
+      <div class="dirBlock">
+      <span class="lbl">Wind direction per spot <span class="status" style="font-weight:400">(columns are the directions the wind comes from; the arrow shows where it blows. Tap to pick one or more, or Any)</span></span>
+      <div id="dirs"></div>
+    </div>
+  </details>
     <details class="panel fold" id="p-data" data-sec="data">
     <summary><h2 id="h-data">Wind data</h2><span class="psum" id="s-data"></span></summary>
     <div class="cols">
@@ -674,32 +700,6 @@ body:not(.on-next) #seasonNote{display:none}
     <p class="status" id="dataStatus" role="status" aria-live="polite" style="margin:10px 0 0"></p>
     <p class="hint">Weather data by <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo.com</a> (CC BY 4.0). Free for personal, non-commercial use.</p>
   </details>
-    <details class="panel fold" id="p-where" data-sec="where">
-    <summary><h2 id="h-where">Spots and period</h2><span class="psum" id="s-where"></span></summary>
-    <div class="cols">
-      <div>
-        <span class="lbl" id="spotLbl">Spots</span>
-        <div class="row" id="spots" role="group" aria-labelledby="spotLbl"></div>
-      </div>
-      <div>
-        <span class="lbl">Months</span>
-        <div class="row" style="flex-wrap:nowrap">
-          <select id="mFrom" aria-label="From month"></select>
-          <span class="status">to</span>
-          <select id="mTo" aria-label="To month"></select>
-        </div>
-        <span class="hint">Applies to every year. A range like Oct–Mar wraps over New Year.</span>
-      </div>
-      <div>
-        <span class="lbl" id="yearLbl">Years</span>
-        <div class="row" id="years" role="group" aria-labelledby="yearLbl"></div>
-      </div>
-    </div>
-      <div class="dirBlock">
-      <span class="lbl">Wind direction per spot <span class="status" style="font-weight:400">(columns are the directions the wind comes from; the arrow shows where it blows. Tap to pick one or more, or Any)</span></span>
-      <div id="dirs"></div>
-    </div>
-  </details>
     <details class="panel fold" id="p-cond" data-sec="cond">
     <summary><h2 id="h-cond">Session conditions</h2><span class="psum" id="s-cond"></span></summary>
     <div class="cols">
@@ -743,7 +743,7 @@ body:not(.on-next) #seasonNote{display:none}
 </div></nav>
 
 <script>
-const APP_VERSION='3.39'; // app-<major>-<minor>; see the lake-wind-days-builds skill
+const APP_VERSION='3.40'; // app-<major>-<minor>; see the lake-wind-days-builds skill
 // ---- data store (Open-Meteo, cached in this browser)
 const DEFAULT_SPOTS={hlucin:{name:'Hlučín',lat:49.89,lon:18.17,tides:false},novemlyny:{name:'Nové Mlýny',lat:48.88,lon:16.68,tides:false},olesna:{name:'Olešná',lat:49.65,lon:18.30,tides:false}};
 // One catalogue for history (Historical Forecast API) and forecast (Forecast API).
